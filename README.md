@@ -13,8 +13,6 @@ This module provides puppet support on Pluribus switches. Implementations of thi
 ##### Installation
 
 ##### Versioning
-- Development builds released on GitHub. **Stable** builds have passed through testing and should be safe to use. (Although the only official builds are those released through Puppet Forge. The GitHub builds are not gaurenteed to work.) **Dev** builds are released when new features are implemented so that users who need new features can use and experiment with newly implemented features. These builds are not necessarily rigorously tested, so use carefully.
-- Forge builds are official releases and are tested and stable, these builds are most
 
 ##### Supported Netvisor Features
 | Feature        | Linux            | Solaris          | Planned Support                   |
