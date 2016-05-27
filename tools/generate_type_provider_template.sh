@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Generates a markdown documentation page, a new provider
+#  a new type and a directory in the test folder.
+
+
+# Usage: run ./tools/generate_type_provider_template.sh new_feature_name
+
 # ├── doc
 # │   ├─+ new_feauture.md
 # │   └── ...
@@ -38,7 +44,7 @@ end
 EOF
 
 cat > "lib/puppet/type/$1.rb" <<EOF
-Puppet::Type.newtype(:$1)do
+Puppet::Type.newtype(:$1) do
 
 end
 EOF
