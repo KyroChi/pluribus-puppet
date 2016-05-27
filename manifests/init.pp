@@ -1,0 +1,3 @@
+class pn-puppet-module {
+    
+}
