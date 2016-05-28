@@ -18,7 +18,7 @@
 # │       └── type
 # │           ├─+ new_feature.rb
 # │           └── ...
-# ├── test
+# ├── examples
 # │   ├─+ new_feature
 # │   │   └─+ new_feature_test_manifest_01.pp
 # │   └── ...
@@ -34,8 +34,8 @@ touch "doc/$1.md"
 mkdir "lib/puppet/provider/$1/"
 touch "lib/puppet/provider/$1/netvisor.rb"
 touch "lib/puppet/type/$1.rb"
-mkdir "test/$1"
-touch "test/$1/$1_test_manifest_01.pp"
+mkdir "examples/$1"
+touch "examples/$1/$1_test_manifest_01.pp"
 
 cat > "lib/puppet/provider/$1/netvisor.rb" <<EOF
 Puppet::Type.type(:$1).provide(:netvisor) do
