@@ -1,3 +1,19 @@
+# Copyright (C) 2016 Pluribus Networks
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
 Puppet::Type.newtype(:pn_vlan) do
 
   desc "Manage a VLAN.
@@ -22,12 +38,12 @@ Puppet::Type.newtype(:pn_vlan) do
   newparam(:id, :namevar => true) do
     validate do |value|
       if not value !~ /\D/
-        raise ArgumentError, "ID must be a number"
+        raise ArgumentError, 'ID must be a number'
       elsif not value.to_i.between?(2, 4092)
-        raise ArgumentError, "ID must be between 2 and 4092"
+        raise ArgumentError, 'ID must be between 2 and 4092'
       end
     end
-  end # newparam vlan
+  end
 
   newproperty(:scope) do
     desc "Set the scope of the specified fabric. Must be 'local' or 'fabric'"
@@ -38,16 +54,30 @@ Puppet::Type.newtype(:pn_vlan) do
   end
 
   newproperty(:description) do
-    desc "Description of the specified fabric"
+    desc 'Description of the specified fabric'
+    defaultto('')
     validate do |value|
-      if value =~ /[^\w,.,:,-]/
-        raise ArgumentError, "Description can only contain letters, numbers, _, ., :, and -"
+      if value =~ /[^\w.:-]/
+        raise ArgumentError, 'Description can only contain letters, numbers, ' +
+            '_, ., :, and -'
       end
     end
   end
 
-  newproperty(:ports) do
-    desc "no whitespace comma seperated ports and port ranges"
+  newproperty(:stats) do
+    desc 'Enable or disable vlan statistics'
+    defaultto(:enable)
+    newvalues(:enable, :disable)
   end
 
-end # Puppet::Type.newtype
+  newproperty(:ports) do
+    desc 'no whitespace comma seperated ports and port ranges'
+    defaultto('none')
+  end
+  
+  newproperty(:untagged_ports) do
+    desc 'no whitespace comma seperated ports and port ranges'
+    defaultto('none')
+  end
+
+end
