@@ -16,74 +16,143 @@
 
 Puppet::Type.type(:pn_vlan).provide(:netvisor) do
 
+  # Don't pre-fetch instances, on systems with established VLAN networks this
+  # will cause puppet to spend ~2 seconds per VLAN and on systems with 100s or
+  # 1000s of VLANs this will be prohibitively bloated
+
   commands :cli => 'cli'
 
+  # Query Netvisor for information about a specific VLAN. This is a helper
+  # method that can be called instead of using Puppet pre-fetching to generate a
+  # property_hash.
+  # @param id: The id of the VLAN you are requesting information from.
+  # @param format: The format string to be passed to the cli.
+  # @return: A string containing the response from Netvisor. Returns nothing if
+  #    no values where found.
+  #
   def get_vlan_info(id, format)
-    info = cli('vlan-show', 'id', id, 'parsable-delim', '%', 'format', format,
+    info = cli('--quiet', 'vlan-show', 'id', id, 'format', format,
                'no-show-headers').split("\n")
+    if info[0]
+      info[0].strip!
+    end
   end
-  
+
+  # Checks that the resource is present on the queried system. If the resource
+  # is not on the switch, Netvisor will return '' which can be checked for by
+  # exists?
+  # @return: true if resource is present, false otherwise
+  #
   def exists?
-    get_vlan_info(resource[:name], 'id').length != 0
+    if get_vlan_info(resource[:name], 'id')
+      return true
+    end
+    false
   end
 
+  # Checks for the scope on the queried system.
+  # @return: the current state of the queried VLAN's scope
+  #
   def scope
-    get_vlan_info(resource[:name], 'scope')[0]
+    get_vlan_info(resource[:name], 'scope')
   end
 
+  # Sets the scope of the queried resource. Since scope is not modifiable by the
+  # CLI, we must destroy the VLAN and re-create it. This gives the end-user the
+  # ability to easily change VLAN scope without manually re-creating the VLANs
+  # @param value: un-used, can be ignored but not removed.
+  #
   def scope=(value)
     destroy
     create
   end
 
+  # Checks the current state of the VLAN description on the switch.
+  # @return: The current state of the VLAN's description.
+  #
   def description
-    get_vlan_info(resource[:name], 'description')[0]
+    get_vlan_info(resource[:name], 'description')
   end
 
+  # Sets the desired description for the VLAN that has been specified. Because
+  # we can change the description from the cli, there is no reason to destroy
+  # and recreate description when we need to change the value.
+  # @param value: The value of the new description, this will be filled in by
+  #    Puppet.
+  #
   def description=(value)
     cli('vlan-modify', 'id', resource[:name], 'description', value)
   end
 
+  # Checks if the VLANs statistics are enabled.
+  # @return: :enable if stats are enabled, :disable otherwise.
+  #
   def stats
-    if get_vlan_info(resource[:name], 'stats')[0] == 'yes'
+    if get_vlan_info(resource[:name], 'stats') == 'yes'
       :enable
     else
       :disable
     end
   end
-    
+
+  #
+  #
+  #
   def stats=(value)
-    cli('vlan-stats-settings-modify', value)[0]
+    cli('--quiet', 'vlan-stats-settings-modify', value)
   end
 
+  #
+  #
+  #
   def ports
-    if get_vlan_info(resource[:name], 'ports')[0] == '0'
+    if get_vlan_info(resource[:name], 'ports') == '0'
       'none'
     else
-      get_vlan_info(resource[:name], 'ports')[0]
+      get_vlan_info(resource[:name], 'ports')
     end
   end
 
+  #
+  #
+  #
   def ports=(value)
     # use port-add and port-remove
     scope=(value)
   end
 
+  #
+  #
+  #
   def untagged_ports
     # does Netvisor return an array or an arg
-    get_vlan_info(resource[:name], 'untagged-ports')[0]
+    u_ports = get_vlan_info(resource[:name], 'untagged-ports')
+    if u_ports == 'none' or ''
+      :none
+    else
+      u_ports
+    end
   end
 
+  #
+  #
+  #
   def untagged_ports=(value)
     # use port-add and port-remove
     scope=(value)
   end
 
+  #
+  #
+  #
   def create
     cli('vlan-create', 'id', resource[:name], 'scope', resource[:scope],
         'ports', resource[:ports])
   end
 
+  #
+  #
+  #
   def destroy
     cli('vlan-delete', 'id', resource[:name])
   end

@@ -107,6 +107,7 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
         end
       end
     end
+    return false
   end
 
   # Always true, leave all error handling to exists?
@@ -130,6 +131,18 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
   # TODO implement for cluster delete
   #
   def destroy(name = resource[:name])
+    clusters = cli('--quiet', 'vlag-show', 'format', 'cluster',
+                   'no-show-headers').split("\n")
+    clusters.each do |c|
+      c.strip!
+      if c == resource[:name]
+        # Destroy the VLAG before the cluster
+        vlag_name = cli('--quiet', 'vlag-show', 'cluster', c, 'format', 'name',
+                        'no-show-headers')
+        vlag_name.chomp.strip!
+        cli('--quiet', 'vlag-delete', 'name', vlag_name)
+      end
+    end
     cli('cluster-delete', 'name', name)
   end
 

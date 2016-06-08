@@ -50,6 +50,15 @@ Puppet::Type.type(:pn_lag).provide(:netvisor) do
   # @return: nil
   #
   def destroy
+    ports = cli('--quiet', 'vlag-show', 'format', 'name,port,peer-port',
+               'no-show-headers', 'parsable-delim', '%').split("\n")
+    debug(ports)
+    ports.each do |p|
+      name, port, peer_port = p.split("%", 3)
+      if port == resource[:name] or peer_port == resource[:name]
+        cli('--quiet', 'vlag-delete', 'name', name)
+      end
+    end
     cli('switch', resource[:switch], 'trunk-delete', 'name', resource[:name])
   end
 
@@ -68,14 +77,47 @@ Puppet::Type.type(:pn_lag).provide(:netvisor) do
     end
   end
 
+  # Checks to make sure that the ports specified by the manifest are available
+  # for use as LAG ports. This method will either return nil or fail.
+  # @return: nil
+  #
+  def verify_ports
+    fail("Port(s) #{resource[:ports]} cannot be used to establish a LAG")
+  end
+
+  # Helper method to parse ports both from the user and from Netvisor.
+  # @return: An array of sorted ports.
+  #
+  def port_arr(ports)
+    port_arr = []
+    ports.split(",").each do |x|
+      if x =~ /-/
+        y = x.split('-')
+        (y[0]..y[1]).each do |n|
+          port_arr.push(n)
+        end
+      else
+        port_arr.push(x)
+      end
+    end
+    port_arr.sort
+  end
+
   # Get the current ports associated with the LAG. Will be in the form of
   # 'none', 'all', or a comma separated list of ports (ie. '2,4,5,8,9').
   # Output compared to resource[:ports].
   # @return: output of cli command.
   #
   def ports
-    cli('--quiet', 'switch', resource[:switch], 'trunk-show', 'name',
+    ports = cli('--quiet', 'switch', resource[:switch], 'trunk-show', 'name',
         resource[:name], 'no-show-headers', 'format', 'ports,').strip!
+    in_ports = port_arr(resource[:ports])
+    act_ports = port_arr(ports)
+    if in_ports == act_ports
+      return resource[:ports]
+    else
+      return act_ports
+    end
   end
 
   # Since ports cannot be modified via cli commands the provider must first

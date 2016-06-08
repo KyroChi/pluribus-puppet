@@ -203,10 +203,10 @@ node puppet-agent.pluribusnetworks.com {
   end
 
   # The lacp mode. Can be set to off, passive or active.
-  # 
+  #
   newproperty(:lacp_mode) do
     desc "The VLAGs lacp mode, can be off, passive or active."
-    defaultto(:off)
+    defaultto(:active)
     newvalues(:off, :passive, :active)
   end
 

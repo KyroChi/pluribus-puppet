@@ -37,7 +37,10 @@ See examples in doc/pn_lag"
 
   ensurable
 
-  # LAG names do not need to be unique
+  # LAG name must follow the naming conventions set forth by the cli. Since
+  # LAG names are not unique the system cannot use self.prefetch and
+  # self.instances to gather resources. The switch resource is enough to develop
+  # individuality between the LAGs.
   # @return: nil
   #
   newparam(:name, :namevar => true) do
@@ -73,6 +76,7 @@ See examples in doc/pn_lag"
   #
   newproperty(:ports) do
     desc "Comma separated list, no whitespace, all, or none. (ie. '1,2,3,4')"
+    defaultto('none')
     validate do |value|
       if value =~ /\s/
         raise ArgumentError, 'Ports cannot be separated by whitespace'

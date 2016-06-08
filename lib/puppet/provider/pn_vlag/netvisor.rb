@@ -44,17 +44,46 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   # @return: false if resource does not exist, true otherwise
   #
   def exists?
-    verify_switches_clustered
-    if @remake
-      debug("Remake called")
-      #destroy
-      #create
-      @remake = false
-    end
-    if get_vlag_info(resource[:name], 'name') == ''
+    if verify_switches_clustered
+      if get_vlag_info(resource[:name], 'name')
+        return true
+      end
       return false
+    else
+      if resource[:ensure] == :present
+      fail("Could not verify that #{resource[:switch]} and " +
+               "#{resource[:peer_switch]} are in a cluster together")
+      else
+        return false
+      end
     end
-    true
+  end
+
+  # Create a new VLAG from the cli. This method pulls data from the specified
+  # resource and should not be called until all of the resources have been
+  # confirmed.
+  # @return: nil
+  #
+  def create
+    cli('switch', resource[:switch], 'vlag-create',
+        'name', resource[:name],
+        'port', resource[:port],
+        'peer-port', resource[:peer_port],
+        'mode', "active-#{resource[:mode]}",
+        'peer-switch', resource[:peer_switch],
+        "failover-#{resource[:failover]}-L2",
+        'lacp-mode', resource[:lacp_mode],
+        'lacp-timeout', resource[:lacp_timeout],
+        'lacp-fallback', resource[:lacp_fallback],
+        'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
+  end
+
+  # Destroy the resource. This method simply calls the destroy command on the
+  # cli to delete the VLAG.
+  # @return: nil
+  #
+  def destroy
+    cli('vlag-delete', 'name', resource[:name])
   end
 
   # This method verifies that both nodes are in a cluster together before
@@ -78,10 +107,9 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
                                          'cluster-node-1',
                                          'no-show-headers').strip! == \
                                          resource[:peer_switch]
-      return 0
+      return true
     else
-      fail("Could not verify that #{resource[:switch]} and " +
-               "#{resource[:peer_switch]} are in a cluster together")
+      return false
     end
   end
 
@@ -118,7 +146,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   # @return: nil
   #
   def port=(value)
-    @remake = true
+    destroy
+    create
   end
 
   # Not sure if needed
@@ -139,7 +168,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   # @return: nil
   #
   def peer_port=(value)
-    @remake = true
+    destroy
+    create
   end
 
   # Get the current mode of the resource, either active or standby. Resource can
@@ -160,7 +190,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   # @return: nil
   #
   def mode=(value)
-    @remake = true
+    destroy
+    create
   end
 
   # Verifies that the specified peer switch exists and is manageable by the
@@ -184,14 +215,15 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
 
   # Since we cannot change the
   def peer_switch=(value)
-    @remake = true
+    destroy
+    create
   end
 
   def failover
     if get_vlag_info(resource[:name], 'failover-move-L2') == 'no'
       :ignore
     else
-      :active
+      :move
     end
   end
 
@@ -212,6 +244,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   def lacp_mode
     if get_vlag_info(resource[:name], 'lacp-mode') == 'active'
       :active
+    elsif get_vlag_info(resource[:name], 'lacp-mode') == 'off'
+      :off
     else
       :standby
     end
@@ -222,7 +256,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   # @return: nil
   #
   def lacp_mode=(value)
-    @remake = true
+    destroy
+    create
   end
 
   # Checks the current lacp timeout. Converts cli output to either :move or
@@ -271,32 +306,6 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   #
   def lacp_fallback_timeout=(value)
     cli('vlag-modify', 'name', resource[:name], 'lacp-fallback-timeout', value)
-  end
-
-  # Create a new VLAG from the cli. This method pulls data from the specified
-  # resource and should not be called until all of the resources have been
-  # confirmed.
-  # @return: nil
-  #
-  def create
-    cli('vlag-create', 'name', resource[:name],
-        'port', resource[:port],
-        'peer-port', resource[:peer_port],
-        'mode', "active-#{resource[:mode]}",
-        'peer-switch', resource[:peer_switch],
-        "failover-#{resource[:failover]}-L2",
-        'lacp-mode', resource[:lacp_mode],
-        'lacp-timeout', resource[:lacp_timeout],
-        'lacp-fallback', resource[:lacp_fallback],
-        'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
-  end
-
-  # Destroy the resource. This method simply calls the destroy command on the
-  # cli to delete the VLAG.
-  # @return: nil
-  #
-  def destroy
-    cli('vlag-delete', 'name', resource[:name])
   end
 
 end
