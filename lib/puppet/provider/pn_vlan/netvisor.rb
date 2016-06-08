@@ -50,6 +50,21 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     false
   end
 
+  #
+  #
+  #
+  def create
+    cli('vlan-create', 'id', resource[:name], 'scope', resource[:scope],
+        'ports', resource[:ports], 'description', resource[:description])
+  end
+
+  #
+  #
+  #
+  def destroy
+    cli('vlan-delete', 'id', resource[:name])
+  end
+
   # Checks for the scope on the queried system.
   # @return: the current state of the queried VLAN's scope
   #
@@ -140,21 +155,6 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   def untagged_ports=(value)
     # use port-add and port-remove
     scope=(value)
-  end
-
-  #
-  #
-  #
-  def create
-    cli('vlan-create', 'id', resource[:name], 'scope', resource[:scope],
-        'ports', resource[:ports])
-  end
-
-  #
-  #
-  #
-  def destroy
-    cli('vlan-delete', 'id', resource[:name])
   end
 
 end
