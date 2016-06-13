@@ -1,3 +1,19 @@
+# Copyright (C) 2016 Pluribus Networks
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
 module PuppetX
   module Pluribus
     class PnHelper
@@ -34,11 +50,15 @@ module PuppetX
           when 'alert'
             Puppet.alert(message)
           else
-            Puppet.warning('WARNING: no valid message type given!' + message)
+            Puppet.warning('WARNING: no valid message type given! ' + message)
         end
       end
 
       # Helper method to build an ip address string
+      # @param nomask: This value can be anything. If it is not included it will
+      #     by default not append a netmask to the generated ip. If you pass this
+      #     argument as 0 it will not append a mask, any other value for this
+      #     argument will append the netmask to the ip.
       # @param ip: The base ip to be built, this can either be all numbers, or an
       #     'x' can be substituted and will be replaced with the vlan parameter. For
       #     example 'x.x.x.0', '255.255.255.5' and '255.x.255.4' are all valid
@@ -49,13 +69,10 @@ module PuppetX
       #     with the 'nomask' parameter.
       # @param vlan: The vlan id. This value will replace any instance of 'x' in the
       #     submitted ip parameter. This parameter's default value is 0.
-      # @param nomask: This value can be anything. If it is not included it will
-      #     by default not append a netmask to the generated ip. If you pass this
-      #     argument as 0 it will not append a mask, any other value for this
-      #     argument will append the netmask to the ip.
       # @return: A string containing the generated ipv4 ip.
       #
-      def build_ip(ip="#{@resource[:ip]}", mask=24, vlan=0, nomask=0)
+      def build_ip(nomask=0, ip="#{@resource[:ip]}", mask="#{@resource[:mask]}",
+                   vlan="#{@resource[:vlan]}")
         k = ip.split('.')
         ip_out = ''
         for i in (0..3)
@@ -68,7 +85,7 @@ module PuppetX
             ip_out += "#{k[i]}."
           end
         end
-        unless nomask != 0
+        unless nomask == 0
           ip_out += "/#{mask}"
         end
         ip_out
@@ -86,23 +103,28 @@ module PuppetX
       #     specified in the manifest file.
       # @return: A string containing the nic.
       #
-      def get_nic(include_vlan=0, vrouter_name="#{@resource[:vrouter]}",
-                  vlan="#{@resource[:vlan]}")
-        message("Executing 'cli --quiet #{current_switch} " +
-                    "vrouter-interface-show vrouter-name #{vrouter_name} " +
-                    "format nic parsable-delim % no-show-headers'")
+      def get_nic(include_vlan=0, vrouter_name="#{@resource[:vrouter]}")
         cmd = "/usr/bin/cli --quiet #{current_switch} vrouter-interface-show " +
-            "vrouter-name #{vrouter_name} format nic " +
+            "vrouter-name #{vrouter_name} format nic,ip " +
             "parsable-delim % no-show-headers"
-        eth = `#{cmd}`
-        eth.split("\n").each do |interface|
-          if interface.split('%')[1].split('.')[1].strip == vlan
+        message("Executing '" + cmd + "'")
+        out = `#{cmd}`
+        out.split("\n").each do |interface|
+          vrouter, nic, ip = interface.split('%')
+          if ip.strip == build_ip
             if include_vlan != 0
-              return interface.split('%')[1]
+              return nic
             else
-              return interface.split('%')[1].split('.')[0] + '.'
+              return nic.split('.')[0] + '.'
             end
           end
+          # if interface.split('%')[1].split('.')[1].strip == vlan
+          #   if include_vlan != 0
+          #     return interface.split('%')[1]
+          #   else
+          #     return interface.split('%')[1].split('.')[0] + '.'
+          #   end
+          # end
         end
         message("Couldn't find the specified vRouter interface.", 'fail')
       end
@@ -122,7 +144,7 @@ module PuppetX
       # Sometimes you need a SPLAT!
       # This method does the same thing as current switch but the return value
       # from this method can be splatted into commands that use shell ordering
-      # (cli). Use with *PuppetX::Pluribus::PnHelper.new(resource).splat_switch
+      # (:cli). Use with *PuppetX::Pluribus::PnHelper.new(resource).splat_switch
       # @param switch: The switch who's cli accessor should be returned,
       #     defaults to the switch specified in a manifest.
       #
