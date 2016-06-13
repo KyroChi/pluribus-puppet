@@ -126,9 +126,7 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
   # This method is called by any thing that renames clusters as well because there
   # is no Netvisor way to change cluster names on the fly.
   #
-  # TODO fix to remove vlans, requires more logic
   # TODO implement for cluster name changes
-  # TODO implement for cluster delete
   #
   def destroy(name = resource[:name])
     clusters = cli('--quiet', 'vlag-show', 'format', 'cluster',
@@ -138,7 +136,7 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
       if c == resource[:name]
         # Destroy the VLAG before the cluster
         vlag_name = cli('--quiet', 'vlag-show', 'cluster', c, 'format', 'name',
-                        'no-show-headers')
+                        'no-show-headers').strip
         vlag_name.chomp.strip!
         cli('--quiet', 'vlag-delete', 'name', vlag_name)
       end
