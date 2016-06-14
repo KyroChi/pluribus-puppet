@@ -14,8 +14,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-# lib/puppet/type/pn_vlan
-
 Puppet::Type.newtype(:pn_vlan) do
 
   # @doc
@@ -52,30 +50,30 @@ Puppet::Type.newtype(:pn_vlan) do
   # @default:
   # @vals: number between 2 and 4092
   # @desc: The id of the vLAN being managed. vLAN ids are not unique across
-  # fabrics, however because of the nature and propagation of fabric vLANSs
-  # there is no need to worry about duplicate decelerations or interference from
-  # multiple vLANs.
+  #     fabrics, however because of the nature and propagation of fabric vLANSs
+  #     there is no need to worry about duplicate decelerations or interference
+  #     from multiple vLANs.
   # @dev:
   #
   newparam(:id) do
     desc "The id of the vLAN to be managed."
     isnamevar
-    validate do |value|
-      if not value !~ /\D/
-        raise ArgumentError, 'ID must be a number'
-      elsif not value.to_i.between?(2, 4092)
-        raise ArgumentError, 'ID must be between 2 and 4092'
-      end
-    end
+    # validate do |value|
+    #   if not value !~ /\D/
+    #     raise ArgumentError, 'ID must be a number'
+    #   elsif not value.to_i.between?(2, 4092)
+    #     raise ArgumentError, 'ID must be between 2 and 4092'
+    #   end
+    # end
   end
 
   # @doc
   # @prop: Scope
   # @default:
-  # @vals: local or fabric
+  # @vals: local fabric
   # @desc: The scope of the vLAN being managed. This can either be fabric or
-  # local depending on whether or not you need a local vLAN or one present on
-  # the fabric.
+  #     local depending on whether or not you need a local vLAN or one present
+  #     on the fabric.
   # @dev:
   #
   newproperty(:scope) do
@@ -86,7 +84,13 @@ Puppet::Type.newtype(:pn_vlan) do
     newvalues(:local, :fabric)
   end
 
-  #
+  # @doc
+  # @prop: Description
+  # @default: `''`
+  # @vals: string containing letters, numbers, _, ., : and -
+  # @desc: The description of the vLAN being created. It is recommended that the
+  #     vLAN description describe what the vLAN is used for.
+  # @dev:
   #
   newproperty(:description) do
     desc 'Description of the specified fabric'
@@ -99,7 +103,12 @@ Puppet::Type.newtype(:pn_vlan) do
     end
   end
 
-  #
+  # @doc
+  # @prop: Stats
+  # @default: `enable`
+  # @vals: enable disable
+  # @desc: Enable or disable vLAN stats for the managed vLAN resource.
+  # @dev:
   #
   newproperty(:stats) do
     desc 'Enable or disable vlan statistics'
@@ -107,14 +116,24 @@ Puppet::Type.newtype(:pn_vlan) do
     newvalues(:enable, :disable)
   end
 
-  #
+  # @doc
+  # @prop: Ports
+  # @default: ``'none'``
+  # @vals:
+  # @desc:
+  # @dev:
   #
   newproperty(:ports) do
     desc 'no whitespace comma seperated ports and port ranges'
     defaultto('none')
   end
 
-  #
+  # @doc
+  # @prop: Untagged_Ports
+  # @default: ``'none'``
+  # @vals:
+  # @desc:
+  # @dev:
   #
   newproperty(:untagged_ports) do
     desc 'no whitespace comma seperated ports and port ranges'

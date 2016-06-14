@@ -38,38 +38,63 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     end
   end
 
+  def deconstruct_range(namevar="#{resource[:name]}")
+    range = []
+    if namevar =~ /-/
+      start, stop = namevar.split('-', 2)
+      if start > stop
+        start, stop = stop, start
+      elsif start == stop
+        range.push(start)
+      end
+      (start..stop).each { |i| range.push(i) }
+    else
+      range.push(namevar)
+    end
+    range
+  end
+
   # Checks that the resource is present on the queried system. If the resource
   # is not on the switch, Netvisor will return '' which can be checked for by
   # exists?
   # @return: true if resource is present, false otherwise
   #
   def exists?
-    if get_vlan_info(resource[:name], 'id')
-      return true
+    @ids = deconstruct_range
+    for id in @ids do
+      unless get_vlan_info(id, 'id')
+        return false
+      end
     end
-    false
+    true
   end
 
   #
   #
   #
   def create
-    cli('vlan-create', 'id', resource[:name], 'scope', resource[:scope],
-        'ports', resource[:ports], 'description', resource[:description])
+    for id in @ids do
+      cli('vlan-create', 'id', id, 'scope', resource[:scope],
+          'ports', resource[:ports], 'description', resource[:description])
+    end
   end
 
   #
   #
   #
   def destroy
-    cli('vlan-delete', 'id', resource[:name])
+    for id in @ids do
+      cli('vlan-delete', 'id', id)
+    end
   end
 
-  # Checks for the scope on the queried system.
-  # @return: the current state of the queried VLAN's scope
-  #
   def scope
-    get_vlan_info(resource[:name], 'scope')
+    for id in @ids do
+      if get_vlan_info(id, 'scope') != resource[:scope]
+        return "Incorrect Scope"
+      end
+    end
+    resource[:scope]
   end
 
   # Sets the scope of the queried resource. Since scope is not modifiable by the
@@ -86,7 +111,12 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   # @return: The current state of the VLAN's description.
   #
   def description
-    get_vlan_info(resource[:name], 'description')
+    for id in @ids do
+      if get_vlan_info(id, 'description') != resource[:description]
+        return "Incorrect Description"
+      end
+    end
+    resource[:description]
   end
 
   # Sets the desired description for the VLAN that has been specified. Because
@@ -96,7 +126,9 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   #    Puppet.
   #
   def description=(value)
-    cli('vlan-modify', 'id', resource[:name], 'description', value)
+    for id in @ids do
+      cli('vlan-modify', 'id', id, 'description', value)
+    end
   end
 
   # Checks if the VLANs statistics are enabled.
@@ -121,40 +153,53 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   #
   #
   def ports
-    if get_vlan_info(resource[:name], 'ports') == '0'
-      'none'
-    else
-      get_vlan_info(resource[:name], 'ports')
+    for id in @ids do
+      if get_vlan_info(id, 'ports') == '0'
+        if resource[:ports] != 'none'
+          return "Incorrect Ports"
+        end
+      else
+        if get_vlan_info(id, 'ports') != resource[:ports]
+          return "Incorrect Ports"
+        end
+      end
     end
+    resource[:ports]
   end
 
   #
   #
   #
   def ports=(value)
-    # use port-add and port-remove
-    scope=(value)
+    destroy
+    create
   end
 
   #
   #
   #
   def untagged_ports
-    # does Netvisor return an array or an arg
-    u_ports = get_vlan_info(resource[:name], 'untagged-ports')
-    if u_ports == 'none' or ''
-      :none
-    else
-      u_ports
+    for id in @ids do
+      u_ports = get_vlan_info(id, 'untagged-ports')
+      if u_ports == 'none' or u_ports == ''
+        if resource[:untagged_ports] != :none
+          "Incorrect Untagged Ports"
+        end
+      else
+        if resource[:untagged_ports] != u_ports
+          "Incorrect Untagged Ports"
+        end
+      end
     end
+    resource[:untagged_ports]
   end
 
   #
   #
   #
   def untagged_ports=(value)
-    # use port-add and port-remove
-    scope=(value)
+    destroy
+    create
   end
 
 end
