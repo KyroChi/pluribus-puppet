@@ -2,7 +2,8 @@
 
 Controls clustering of switches on the fabric.
 
-does not support re-naming of clusters
+Does not currently support re-naming of clusters.
+Force clustering not yet implemented.
 
 | Option         | Valid Values              | Default      |
 |----------------|---------------------------|:------------:|
