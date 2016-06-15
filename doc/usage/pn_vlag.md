@@ -16,8 +16,14 @@ Manages VLAGs
 |lacp_fallback        |what type of fallback for lacp `< bundle | individual >`       | `bundle`     |
 |lacp_fallback_timeout|fallback timeout (in seconds) `< 30..60 >`                     | `'50'`       |
 
-##### Usage
+1. [Usage](#usage)
+2. [Examples](#examples)
+3. [Notes](#notes)
+
+## Usage
+
 VLAG can only be configured __*AFTER*__ a cluster has been configured, keep this in mind when creating VLAGs so that you specify clusters prior to VLAG creation.
+
 ```puppet
 pn_vlag { '<name>':
     ensure => present,
@@ -33,13 +39,19 @@ pn_vlag { '<name>':
     lacp_fallback_timeout => <30..60>
 }
 ```
-##### Examples
+
+## Examples
+
+This example sets up a cluster between two spines and configures 2 vLAGs between them. This example assumes a 2 spine, 4 leaf setup, where the leafs are grouped into 2 clusters. This manifest creates the two vLAGs between the spine cluster and each of the leaf clusters.
+
 ```puppet
 node puppet-agent.pluribusnetworks.com {
+
     pn_cluster { 'spine1-spine2':
         ensure => present,
         nodes => ['onvlspine1', 'onvlspine2']
     }
+    
     pn_vlag { 'spine-to-leaf3':
         ensure => present,
         switch => onlvspine1,
@@ -53,6 +65,7 @@ node puppet-agent.pluribusnetworks.com {
         lacp_fallback => bundle,
         lacp_fallback_timeout => 40
     }
+    
     pn_vlag { 'spine-to-leaf4':
         ensure => present,
         switch => onlvspine1,
@@ -66,5 +79,8 @@ node puppet-agent.pluribusnetworks.com {
         lacp_fallback => bundle,
         lacp_fallback_timeout => 40
     }
+    
 }
 ```
+
+## Notes

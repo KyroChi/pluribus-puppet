@@ -1,4 +1,6 @@
-Controls VLANs on the destination switch.
+# pn_lag
+
+Manage link aggregation on the destination switch.
 
 | Option      | Valid Values                                                  | Default      |
 |-------------|---------------------------------------------------------------|:------------:|
@@ -6,7 +8,14 @@ Controls VLANs on the destination switch.
 |switch       |local or fabric                                                |**REQUIRED**  |
 |ports        |comma seperated list, no whitespace.                           | `'none'`     |
 
-##### Usage
+1. [Usage](#usage)
+2. [Examples](#examples)
+3. [Notes](#notes)
+
+## Usage
+
+Usage notes
+
 ```puppet
 pn_lag { '<lag-name>':
 	ensure => <present|absent>,
@@ -14,8 +23,9 @@ pn_lag { '<lag-name>':
 	ports => <ports>
 }
 ```
-None of the pn_lag properties are optional. The switch must be connected to the same fabric as the Puppet Agent node.
-##### Examples
+
+## Examples
+
 ```puppet
 pn_lag { 'my-new-lag':
     ensure => present,
@@ -23,3 +33,5 @@ pn_lag { 'my-new-lag':
     ports => '4,5,128-130'
 }
 ```
+
+## Notes

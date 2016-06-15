@@ -48,3 +48,65 @@ pn_vlan { '1002':
     ports => 'none'
 }
 ```
+
+# pn_vlan
+
+Manage vLANs on the destination switch.
+
+| Option      | Valid Values                                                  | Default      |
+|-------------|---------------------------------------------------------------|:------------:|
+|ensure       |present or absent                                              |**REQUIRED**  |
+|scope        |local or fabric                                                |**REQUIRED**  |
+|description  |string, must be letters, numbers, \_, ., :, or -               | `''`         |
+|ports        |comma seperated list, no whitespace. Must be between 2 and 4092| `'none'`     |
+
+1. [Usage](#usage)
+2. [Examples](#examples)
+3. [Notes](#notes)
+
+## Usage
+
+If you are ensuring absent the other parameters can be ignored, including scope, which cannot be ignored if you are insuring present.
+
+```puppet
+ pn_vlan { '<id>':
+ 	ensure => absent
+ }
+```
+ If you are ensuring present it is reccomended that you include all of the parameters. It is also reccomended that defaults are explicitly stated so as to improve readability and prevent future breaks if the defaults in the codebase change.
+ 
+```puppet
+ pn_vlan { '<id>':
+ 	ensure => present,
+     scope => <local|fabric>,
+     description => <description>,
+     ports => <ports>
+ }
+```
+
+## Examples
+
+This example shows the creation of vLAN 1001, 1001, and 99 vLANs in the range 101-200. Ranges are supported and can be passed as lists or arrays. The following are all valid namevars: `'101-200'`, `'101-150,150-200'` and `['101', '102', '103']`
+
+```puppet
+pn_vlan { '1000':
+	ensure => present,
+    scope => local,
+    description => 'Puppet-1000',
+    ports => '56,74,101-127'
+}
+
+pn_vlan { '1001':
+	ensure => absent,
+    ports => '56,74,101-127'
+}
+
+pn_vlan { '101-200':
+	ensure => present,
+    scope => fabric,
+    description => 'Puppet-range',
+    ports => 'none'
+}
+```
+
+## Notes

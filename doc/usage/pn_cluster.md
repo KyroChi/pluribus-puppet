@@ -2,31 +2,37 @@
 
 Controls clustering of switches on the fabric.
 
-Does not currently support re-naming of clusters.
-Force clustering not yet implemented.
-
 | Option         | Valid Values              | Default      |
 |----------------|---------------------------|:------------:|
 |ensure          |present or absent          |**REQUIRED**  |
 |nodes           |array of the required nodes|**REQUIRED**  |
 |force_clustering|yes or no                  | `no`         |
 
-##### Usage
+1. [Usage](#usage)
+2. [Examples](#examples)
+3. [Notes](#notes)
+
+## Usage
+
 ```puppet
 pn_cluster { '<cluster-name>':
 	ensure => <present|absent>,
 	nodes => ['<node1>','<node2>']
 }
 ```
-**Force Clustering**
-Force clustering should only be used if you have identified a problem with the current cluster configuration and are sure that the cluster being forced is correct.
-##### Examples
+
+## Examples
+
+Creates a cluster between two switches named `spine_1` and `spine_2`.
+
 ```puppet
 pn_cluster { 'spine-cluster':
     ensure => present,
     nodes => ['spine_1', 'spine_2']
 }
 ```
+
+Creates a cluster between two switches named `leaf_1` and `leaf_2`.
 
 ```puppet
 pn_cluster { 'leaf-cluster-1:
@@ -35,3 +41,8 @@ pn_cluster { 'leaf-cluster-1:
    force_clustering => 'yes
 }
 ```
+
+## Notes
+
+* Does not currently support re-naming of clusters.
+* Force clustering not yet implemented. (DO NOT USE)
