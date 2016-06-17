@@ -1,18 +1,20 @@
-# Copyright (C) 2016 Pluribus Networks
+# Copyright 2016 Pluribus Networks
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+require File.expand_path(
+    File.join(File.dirname(__FILE__),
+              '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
 
 Puppet::Type.type(:pn_vlan).provide(:netvisor) do
 
@@ -38,29 +40,14 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     end
   end
 
-  def deconstruct_range(namevar="#{resource[:name]}")
-    range = []
-    if namevar =~ /-/
-      start, stop = namevar.split('-', 2)
-      if start > stop
-        start, stop = stop, start
-      elsif start == stop
-        range.push(start)
-      end
-      (start..stop).each { |i| range.push(i) }
-    else
-      range.push(namevar)
-    end
-    range
-  end
-
   # Checks that the resource is present on the queried system. If the resource
   # is not on the switch, Netvisor will return '' which can be checked for by
   # exists?
   # @return: true if resource is present, false otherwise
   #
   def exists?
-    @ids = deconstruct_range
+    @H = PuppetX::Pluribus::PnHelper.new(resource)
+    @ids = @H.deconstruct_range
     for id in @ids do
       unless get_vlan_info(id, 'id')
         return false
@@ -135,7 +122,7 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   # @return: :enable if stats are enabled, :disable otherwise.
   #
   def stats
-    if get_vlan_info(resource[:name], 'stats') == 'yes'
+    if get_vlan_info(@ids[0], 'stats') == 'yes'
       :enable
     else
       :disable
@@ -203,3 +190,4 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   end
 
 end
+

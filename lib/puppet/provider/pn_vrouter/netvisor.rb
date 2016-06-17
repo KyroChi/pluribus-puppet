@@ -1,18 +1,20 @@
-# Copyright (C) 2016 Pluribus Networks
+# Copyright 2016 Pluribus Networks
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+require File.expand_path(
+File.join(File.dirname(__FILE__),
+         '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
 
 Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
@@ -53,14 +55,15 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   # @return: A string containing the requested information.
   #
   def get_vrouter_info(format, name="#{resource[:name]}")
-    cli('--quiet', 'vrouter-show', 'name', name, 'format', format,
-        'no-show-headers').strip
+    cli('--quiet', *@H.splat_switch, 'vrouter-show', 'name', name,
+        'format', format, 'no-show-headers').strip
   end
 
   #
   #
   def exists?
     # check that the vnet is correct
+    @H = PuppetX::Pluribus::PnHelper.new(resource)
     if get_vrouter_info('name') != ''
       return true
     end
@@ -70,15 +73,24 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   #
   #
   def create
-    cli('--quiet', 'vrouter-create', 'name', resource[:name], 'vnet',
-        resource[:vnet], 'hw-vrrp-id', resource[:hw_vrrp_id],
+    cli('--quiet', *@H.splat_switch, 'vrouter-create',
+        'name', resource[:name], 'vnet', resource[:vnet],
+        'hw-vrrp-id', resource[:hw_vrrp_id],
         resource[:service])
+    if resource[:bgp_as] != ''
+      cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+          'name', resource[:name], 'bgp-as', resource[:bgp_as])
+    end
   end
 
   #
   #
   def destroy
-    cli('--quiet', 'vrouter-delete', 'name', resource[:name])
+    cli('--quiet', *@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
+  end
+
+  def switch
+    resource[:switch]
   end
 
   def vnet
@@ -106,7 +118,18 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def service=(value)
-    cli('--quiet', 'vrouter-modify', 'name', resource[:name], value)
+    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+        'name', resource[:name], value)
+  end
+
+  def bgp_as
+    get_vrouter_info('bgp-as')
+  end
+
+  def bgp_as=(value)
+    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+        'name', resource[:name], 'bgp-as', value)
   end
 
 end
+

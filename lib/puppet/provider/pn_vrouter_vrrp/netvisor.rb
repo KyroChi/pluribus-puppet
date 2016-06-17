@@ -1,18 +1,16 @@
-# Copyright (C) 2016 Pluribus Networks
+# Copyright 2016 Pluribus Networks
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
 
@@ -41,8 +39,9 @@ Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
     # else
     #   return interface
     # end
-    out = cli('--quiet', 'vrouter-interface-show', 'ip', @v_h.build_ip(0, interface),
-        'format', 'nic', 'parsable-delim', '%').split('%')
+    out = cli('--quiet', 'vrouter-interface-show', 'ip',
+              @v_h.build_ip(0, interface), 'format', 'nic',
+              'parsable-delim', '%').split('%')
     unless out[1].nil?
       return out[1].strip
     end
@@ -60,9 +59,9 @@ Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
   def exists?
     # Create a new PnHelper and PnVrouterHelper
     @v_h = PuppetX::Pluribus::PnVrouterHelper.new(resource)
-    vrouters = cli('--quiet', *@v_h.splat_switch, 'vrouter-interface-show', 'vrouter-name',
-                   resource[:vrouter], 'format', 'ip', 'no-show-headers',
-                   'parsable-delim', '%').split("\n")
+    vrouters = cli('--quiet', *@v_h.splat_switch, 'vrouter-interface-show',
+                   'vrouter-name', resource[:vrouter], 'format', 'ip',
+                   'no-show-headers', 'parsable-delim', '%').split("\n")
     vrouters.each do |v|
       i = v.split('%')
       if i[1].strip == @v_h.build_ip and
@@ -74,9 +73,10 @@ Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
   end
 
   def create
-    cli('--quiet', *@v_h.splat_switch, 'vrouter-interface-add', 'vrouter-name', resource[:vrouter],
-        'ip', @v_h.build_ip(1), 'vlan', resource[:vlan], 'if', 'data',
-        'vrrp-id', resource[:vrrp_id], 'vrrp-primary', build_vrrp_primary,
+    cli('--quiet', *@v_h.splat_switch, 'vrouter-interface-add',
+        'vrouter-name', resource[:vrouter], 'ip', @v_h.build_ip(1),
+        'vlan', resource[:vlan], 'if', 'data', 'vrrp-id', resource[:vrrp_id],
+        'vrrp-primary', build_vrrp_primary,
         'vrrp-priority', resource[:vrrp_priority])
   end
 
@@ -100,8 +100,8 @@ Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
   end
 
   def ip=(value)
-    # destroy
-    # create
+    destroy
+    create
   end
 
   def mask
@@ -144,3 +144,4 @@ Puppet::Type.type(:pn_vrouter_vrrp).provide(:netvisor) do
   end
 
 end
+
