@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Puppet::Type.newtype(:pn_vrouter_bgp) do
-
-  desc ""
+Puppet::Type.newtype(:pn_vrouter_loopback) do
 
   ensurable
 
@@ -38,9 +36,4 @@ Puppet::Type.newtype(:pn_vrouter_bgp) do
     defaultto('local')
   end
 
-  newproperty(:bgp_as) do
-
-  end
-
 end
-

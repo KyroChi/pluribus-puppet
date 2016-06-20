@@ -305,6 +305,8 @@ Manage vRouters.
 
 **`name`** is the name of the vRouter to be managed. Name can be any string as long as it only contains `letters`, `numbers`, `_`, `.`, `:`, and `-`. 
 
+**`ensure`** tells Puppet how to manage the vRouter. Ensuring `present` will mean that the vRouter will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vRouter is not present on the system after the catalog run.
+
 **`vnet`** is the name of the vNET assigned to the vRouter.
 
 **`hw_vrrp_id`** is a hardware id for VRRP interfaces that may live on this vRouter.
@@ -339,11 +341,11 @@ Manage vRouter BGP interfaces. To create a BGP interface you must first create a
 
 #### Properties
 
-**`name`** is actually a special value. Since BGP interfaces don't actually have names, the namevar for this resource can be anything you want as long as it is unique between multiple BGP resource decelerations.
+**`name`** is a combination of the vRouter name and the BGP neighbor IP address, separated by a space.
 
-**`vrouter`** is the name of the vRouter that will be using this instance of BGP.
+**`ensure`** tells Puppet how to manage the BGP interface. Ensuring `present` will mean that the BGP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the BGP interface is not present on the system after the catalog run.
 
-**`ip`** the IP of the BGP neighbor interface.
+**`bgp_as`** is the AS ID for the BGP interface.
 
 **_`switch`_** is the name of the switch where the vRouter BGP interface will be hosted. This can be any switch on the fabric. The default value is `local` which creates a BGP interface on the node where the resource was declared.
 
@@ -382,11 +384,9 @@ pn_vrouter_ip { '101':
     mask => '24',
 }
 
-pn_vrouter_bgp { 'bgp':
+pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
     require => Pn_vrouter_ip['101'],
     ensure => present,
-    vrouter => 'demo-vrouter',
-    ip => '101.101.101.1',
     bgp_as => '65001',
 }
 ```
@@ -399,6 +399,8 @@ Mangae basic vRouter interfaces. This only creates an IP interface, and to creat
 #### Properties
 
 **`vlan`** is the id of the vLan that the vRouter interface will live on.
+
+**`ensure`** tells Puppet how to manage the IP interface. Ensuring `present` will mean that the IP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the IP interface is not present on the system after the catalog run.
 
 **`vrouter`** is the name of the vRouter that will host and manage the IP interface.
 
@@ -446,11 +448,40 @@ pn_vrouter_ip { '101':
 ```
 
 ---
+### pn_vrouter_loopback
+
+Creates a vRouter loopback interface on the destination switch.
+
+#### Properties
+
+**`name`** is a combination of the vRouter name and the loopback IP address, separated by a space.
+
+**`ensure`** tells Puppet how to manage the loopback interface. Ensuring `present` will mean that the loopback interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the loopback interface is not present on the system after the catalog run.
+
+**_`switch`_** is the name of the switch where the IP interface will be created. This can be any switch on the fabric. The default value is `local`, which creates an IP interface on the node where the resource was declared.
+
+#### Example Implementation
+
+CLI:
+```
+CLI (...) > vrouter-loopback-interface-add vrouter-name spine1vrouter ip 172.16.1.1
+```
+
+Puppet:
+```puppet
+pn_vrouter_loopback { 'spine1vrouter 172.16.1.1': 
+    ensure => present,
+}
+```
+
+---
 ### pn_vrouter_vrrp
 
 #### Properties
 
 **`vlan`** is the name of the vLAN where the VRRP interface will live.
+
+**`ensure`** tells Puppet how to manage the VRRP interface. Ensuring `present` will mean that the VRRP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the VRRP interface is not present on the system after the catalog run.
 
 **`vrouter`** is the name of the vRouter that will host and manage the VRRP interface.
 

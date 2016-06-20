@@ -22,20 +22,19 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   def get_bgp_info(format)
     out = cli('--quiet', *@H.splat_switch, 'vrouter-bgp-show',
-              'vrouter-name', resource[:vrouter],
-              'neighbor', resource[:ip],'format', format,
+              'vrouter-name', @v, 'neighbor', @i, 'format', format,
               'no-show-headers', 'parsable-delim', '%').split('%')
     if out[1]
-      out[1].strip
+      return out[1].strip
     end
     out[0]
   end
 
   def exists?
     @H = PuppetX::Pluribus::PnHelper.new(resource)
-    if cli('--quiet', *@H.splat_switch, 'vrouter-bgp-show',
-              'vrouter-name', resource[:vrouter],
-              'neighbor', resource[:ip]) != ''
+    @v, @i = resource[:name].split ' '
+    if cli(@H.q, *@H.splat_switch, 'vrouter-bgp-show',
+              'vrouter-name', @v, 'neighbor', @i) != ''
       return true
     end
     false
@@ -43,25 +42,16 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   def create
     cli('--quiet', *@H.splat_switch, 'vrouter-bgp-add',
-        'vrouter-name', resource[:vrouter], 'neighbor', resource[:ip],
-        'remote-as', resource[:bgp_as])
+        'vrouter-name', @v, 'neighbor', @i, 'remote-as', resource[:bgp_as])
   end
 
   def destroy
-    cli('--quiet', *@H.splat_switch, 'vrouter-bgp-remove',
-        'vrouter-name', resource[:vrouter], 'neighbor', resource[:ip])
+    cli(@H.q, *@H.splat_switch, 'vrouter-bgp-remove', 'vrouter-name', @v,
+        'neighbor', @i)
   end
 
   def switch
     resource[:switch]
-  end
-
-  def vrouter
-    resource[:vrouter]
-  end
-
-  def ip
-    resource[:ip]
   end
 
   def bgp_as
@@ -69,9 +59,8 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
   end
 
   def bgp_as=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-bgp-modify',
-        'vrouter-name', resource[:vrouter], 'neighbor', resource[:ip],
-        'remote-as', value)
+    cli(@H.q,  *@H.splat_switch, 'vrouter-bgp-modify', 'vrouter-name', @v,
+        'neighbor', @i, 'remote-as', value)
   end
 
 end
