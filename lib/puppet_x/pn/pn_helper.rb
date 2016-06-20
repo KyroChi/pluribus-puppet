@@ -29,6 +29,16 @@ module PuppetX
       # Global variable to store the resource hash pulled from the provider
       @resource
 
+      # Splat to include 'parsable-delim %' and '--quiet'
+      def pdq
+        ['parsable-delim', '%', q]
+      end
+
+      # @H.q to include '--quiet'
+      def q
+        '--quiet'
+      end
+
       # Pull resources from the provider so that default values of methods work
       # aka less typing for you! Allows methods to be passed values from a
       # resource hash as if these methods were declared inside of the provider.

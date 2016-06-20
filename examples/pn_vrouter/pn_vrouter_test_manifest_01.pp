@@ -11,3 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+pn_vrouter { 'kyle-vrouter':
+  ensure => present,
+  vnet => 'puppet-ansible-chef-fab-global',
+  hw_vrrp_id => 18,
+  service => enable,
+}

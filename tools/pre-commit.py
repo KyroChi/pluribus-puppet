@@ -91,18 +91,20 @@ for root, subdirs, files in os.walk(ROOT):
             # Check License and change if needed.
             ####################################################################
 
-            lines = []
-            comment = re.compile('^#')
-            header = True
-            for line in contents:
-                if comment.search(line) is None:
-                    header = False
-                if not header:
-                    lines.append(line)
+            # Un-comment to append licenses to all files, commented because it
+            # can quickly change every file and mess up your git stuff.
+            # lines = []
+            # comment = re.compile('^#')
+            # header = True
+            # for line in contents:
+            #     if comment.search(line) is None:
+            #         header = False
+            #     if not header:
+            #        lines.append(line)
 
-            file = open(root + '/' + f, 'w')
-            for l in HEADER + lines:
-                file.write(l + "\n")
+            # file = open(root + '/' + f, 'w')
+            # for l in HEADER + lines:
+            #     file.write(l + "\n")
 
 
 
