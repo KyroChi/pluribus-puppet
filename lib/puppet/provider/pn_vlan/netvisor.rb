@@ -20,18 +20,10 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
 
   # Don't pre-fetch instances, on systems with established VLAN networks this
   # will cause puppet to spend ~2 seconds per VLAN and on systems with 100s or
-  # 1000s of VLANs this will be prohibitively bloated
+  # 1000s of VLANs this will be prohibitively time-consuming
 
   commands :cli => 'cli'
 
-  # Query Netvisor for information about a specific VLAN. This is a helper
-  # method that can be called instead of using Puppet pre-fetching to generate a
-  # property_hash.
-  # @param id: The id of the VLAN you are requesting information from.
-  # @param format: The format string to be passed to the cli.
-  # @return: A string containing the response from Netvisor. Returns nothing if
-  #    no values where found.
-  #
   def get_vlan_info(id, format)
     info = cli('--quiet', 'vlan-show', 'id', id, 'format', format,
                'no-show-headers').split("\n")
@@ -40,63 +32,58 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     end
   end
 
-  # Checks that the resource is present on the queried system. If the resource
-  # is not on the switch, Netvisor will return '' which can be checked for by
-  # exists?
-  # @return: true if resource is present, false otherwise
-  #
   def exists?
     @H = PuppetX::Pluribus::PnHelper.new(resource)
     @ids = @H.deconstruct_range
     for id in @ids do
       unless get_vlan_info(id, 'id')
-        return false
+        create
       end
     end
     true
   end
 
-  #
-  #
-  #
   def create
     for id in @ids do
-      cli('vlan-create', 'id', id, 'scope', resource[:scope],
-          'ports', resource[:ports], 'description', resource[:description])
+      unless get_vlan_info(id, 'id')
+        cli('vlan-create', 'id', id, 'scope', resource[:scope],
+            'ports', resource[:ports], 'description', resource[:description])
+      end
     end
   end
 
-  #
-  #
-  #
   def destroy
     for id in @ids do
-      cli('vlan-delete', 'id', id)
+      if get_vlan_info(id, 'id')
+        begin
+          cli('vlan-delete', 'id', id)
+        rescue => detail
+          if detail =~ /router interface/
+            nic = cli('vrouter-interface-show', 'vlan', id, 'format', 'nic',
+                      @H.pdq).split '%'
+            cli('vrouter-interface-remove', 'vrouter-name', nic[0],
+                'nic', nic[1].strip)
+          end
+        end
+      end
     end
   end
 
   def scope
     for id in @ids do
-      if get_vlan_info(id, 'scope') != resource[:scope]
+      if get_vlan_info(id, 'scope') != resource[:scope].to_s
+        puts get_vlan_info(id, 'scope')
         return "Incorrect Scope"
       end
     end
     resource[:scope]
   end
 
-  # Sets the scope of the queried resource. Since scope is not modifiable by the
-  # CLI, we must destroy the VLAN and re-create it. This gives the end-user the
-  # ability to easily change VLAN scope without manually re-creating the VLANs
-  # @param value: un-used, can be ignored but not removed.
-  #
   def scope=(value)
     destroy
     create
   end
 
-  # Checks the current state of the VLAN description on the switch.
-  # @return: The current state of the VLAN's description.
-  #
   def description
     for id in @ids do
       if get_vlan_info(id, 'description') != resource[:description]
@@ -106,21 +93,12 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     resource[:description]
   end
 
-  # Sets the desired description for the VLAN that has been specified. Because
-  # we can change the description from the cli, there is no reason to destroy
-  # and recreate description when we need to change the value.
-  # @param value: The value of the new description, this will be filled in by
-  #    Puppet.
-  #
   def description=(value)
     for id in @ids do
       cli('vlan-modify', 'id', id, 'description', value)
     end
   end
 
-  # Checks if the VLANs statistics are enabled.
-  # @return: :enable if stats are enabled, :disable otherwise.
-  #
   def stats
     if get_vlan_info(@ids[0], 'stats') == 'yes'
       :enable
@@ -129,16 +107,10 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     end
   end
 
-  #
-  #
-  #
   def stats=(value)
     cli('--quiet', 'vlan-stats-settings-modify', value)
   end
 
-  #
-  #
-  #
   def ports
     for id in @ids do
       if get_vlan_info(id, 'ports') == '0'
@@ -154,17 +126,11 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     resource[:ports]
   end
 
-  #
-  #
-  #
   def ports=(value)
     destroy
     create
   end
 
-  #
-  #
-  #
   def untagged_ports
     for id in @ids do
       u_ports = get_vlan_info(id, 'untagged-ports')
@@ -181,9 +147,6 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
     resource[:untagged_ports]
   end
 
-  #
-  #
-  #
   def untagged_ports=(value)
     destroy
     create

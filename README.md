@@ -309,7 +309,7 @@ Manage vLANs.
 
 **`scope`** is the name of the vNET assigned to the vRouter.
 
-**_`description`_** is the description of the vLAN. Can only contain `letters`, `numbers`, `_`, `.`, `:`, and `-`. The default value is `''`.
+**_`description`_** is the description of the vLAN. Can only contain `letters`, `numbers`, `_`, `.`, `:`, and `-`. The default value is `'-'`.
 
 **_`stats`_** enables or disables vLAN statistics. This can either be `enable` or `disable`. The default value is `enable`.
 
