@@ -313,9 +313,9 @@ Manage vLANs.
 
 **_`stats`_** enables or disables vLAN statistics. This can either be `enable` or `disable`. The default value is `enable`.
 
-**_`ports`_** is a comma seperated list of ports that the vLAN will use. There cannot be any whitespace seperating the ports, ranges are allowed. The default value is `'none'`
+**_`ports`_** is a comma separated list of ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
 
-**_`untagged_ports`_** is a comma seperated list of untagged ports that the vLAN will use. There cannot be any whitespace seperating the ports, ranges are allowed. The default value is `'none'`
+**_`untagged_ports`_** is a comma separated list of untagged ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
 
 #### Example Implementation
 
