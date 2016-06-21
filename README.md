@@ -297,6 +297,45 @@ pn_vlag { 'spine-to-leafs':
 ```
 
 ---
+### pn_vlan
+
+Manage vLANs.
+
+#### Properties
+
+**`id`** is the vLAN id, this can be any number between 2 and 4092. Comma separated or whitespace separated is allowed. Ranges are allowed.
+
+**`ensure`** tells Puppet how to manage the vLAN. Ensuring `present` will mean that the vLAN will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vLAN is not present on the system after the catalog run.
+
+**`scope`** is the name of the vNET assigned to the vRouter.
+
+**_`description`_** is the description of the vLAN. Can only contain `letters`, `numbers`, `_`, `.`, `:`, and `-`. The default value is `'-'`.
+
+**_`stats`_** enables or disables vLAN statistics. This can either be `enable` or `disable`. The default value is `enable`.
+
+**_`ports`_** is a comma separated list of ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
+
+**_`untagged_ports`_** is a comma separated list of untagged ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
+
+#### Example Implementation
+
+CLI:
+```
+CLI (...) > vlan-create id 101 scope fabric description puppet-vlan ports none untagged-ports none
+```
+
+Puppet:
+```puppet
+pn_vlan { '101':
+    ensure         => present,
+    scope          => fabric,
+    description    => 'puppet-vlan',
+    ports          => 'none',
+    untagged_ports => 'none',
+}
+```
+
+---
 ### pn_vrouter
 
 Manage vRouters.
