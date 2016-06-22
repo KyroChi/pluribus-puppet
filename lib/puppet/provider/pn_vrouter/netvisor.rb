@@ -25,31 +25,6 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
   commands :cli => 'cli'
 
-  # def self.getvrouters
-  #   vrouters = cli('--quiet', 'vrouter-show', 'format', 'name,',
-  #                  'no-show-headers').split("\n")
-  #   vrouters.each do |v|
-  #     v.strip!
-  #   end
-  #   vrouters
-  # end
-  #
-  # def self.instances
-  #   vrouters = []
-  #   getvrouters.each do |v|
-  #     vrouters.push(v)
-  #   end
-  #   vrouters
-  # end
-  #
-  # def self.prefetch(resources)
-  #   vrouters = instances
-  #   vrouters.each do |name|
-  #     provider = vrouters.find { |v| v == name }
-  #     resources[name].provider = provider unless provider.nil?
-  #   end
-  # end
-
   #
   # Chomps and strip!s output before returning it.
   # @return: A string containing the requested information.
@@ -59,19 +34,20 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
         'format', format, 'no-show-headers').strip
   end
 
-  #
-  #
   def exists?
-    # check that the vnet is correct
     @H = PuppetX::Pluribus::PnHelper.new(resource)
+    unless cli('switch', resource[:switch], @H.q) == ''
+      fail("Switch #{resource[:switch]} could not be found on the fabric.")
+    end
+    if cli('vnet-show', 'name', resource[:vnet], @H.q) == ''
+      fail("vNET #{resource[:vnet]} could not be found.")
+    end
     if get_vrouter_info('name') != ''
       return true
     end
     false
   end
 
-  #
-  #
   def create
     cli('--quiet', *@H.splat_switch, 'vrouter-create',
         'name', resource[:name], 'vnet', resource[:vnet],
@@ -83,8 +59,6 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
     end
   end
 
-  #
-  #
   def destroy
     cli('--quiet', *@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
@@ -98,14 +72,15 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def vnet=(value)
-
+    destroy
+    create
   end
 
   def hw_vrrp_id
     get_vrouter_info('hw-vrrp-id')
   end
 
-  def hw_vrrp_ip=(value)
+  def hw_vrrp_id=(value)
     destroy
     create
   end
