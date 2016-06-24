@@ -3,10 +3,10 @@
     "version": "0.0.1",
     "author": "Pluribus Networks",
     "summary": "Interface with Pluribus Networks switches via Puppet!",
-    "license": null,
-    "source": null,
-    "project_page": null,
-    "issues_url": null,
+    "license": "apache v2",
+    "source": "https://github.com/amitsi/pluribus-puppet",
+    "project_page": "https://github.com/amitsi/pluribus-puppet",
+    "issues_url": "https://github.com/amitsi/pluribus-puppet/issues",
     "dependencies": [
 	{
 	    "name": "puppetlabs-stdlib",

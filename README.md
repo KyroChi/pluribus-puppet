@@ -115,8 +115,8 @@ The following is a reference guide for using the various types provided by pn-pu
 1. [pn_vlan](#pn_vlan)
 1. [pn_vrouter](#pn_vrouter)
 1. [pn_vrouter_bgp](#pn_vrouter_bgp)
-1. [pn_vrouter_ip](#pn_vrouter_ip)
-1. [pn_vrouter_vrrp](#pn_vrouter_vrrp)
+1. [pn_vrouter_if](#pn_vrouter_if)
+1. [pn_vrouter_loopback](#pn_vrouter_loopback)
 
 ---
 ### pn_cluster

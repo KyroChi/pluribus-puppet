@@ -14,8 +14,8 @@
 
 # SET-UP
 
-Create vlan 101
-PASS
+# Create vlan 101
+# PASS
 pn_vlan { '101':
   ensure      => present,
   scope       => fabric,
@@ -170,12 +170,10 @@ pn_vrouter { 'test-vrouter':
   hw_vrrp_id => 18,
 }
 
-pn_vrouter_ip { '103':
+pn_vrouter_if { '103 x.x.x.2/24':
   require => Pn_vrouter['test-vrouter'],
   ensure => present,
   vrouter => 'test-vrouter',
-  ip => 'x.x.x.1',
-  mask => '24',
 }
 
 # Make sure it is deleted
@@ -196,12 +194,10 @@ pn_vrouter { 'test-vrouter':
   hw_vrrp_id => 18,
 }
 
-pn_vrouter_ip { '103':
-  before => Pn_vrouter['test-vrouter'],
+pn_vrouter_if { '103 x.x.x.2/24':
+  require => Pn_vrouter['test-vrouter'],
   ensure => absent,
   vrouter => 'test-vrouter',
-  ip => 'x.x.x.1',
-  mask => '24',
 }
 
 # END

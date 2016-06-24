@@ -76,7 +76,7 @@ pn_vrouter { 'demo-vrouter':
     defaultto('local')
     validate do |value|
       if value =~ /[^\w.:-]/
-        raise ArgumentError, 'vRouter name can only contain letters, ' +
+        raise ArgumentError, 'Switch name can only contain letters, ' +
             'numbers, _, ., :, and -'
       end
     end
