@@ -14,17 +14,47 @@
 
 Puppet::Type.newtype(:pn_vrouter_loopback) do
 
+  @doc = "Creates a vRouter loopback interface on the destination switch.
+
+Properties
+
+name is a combination of the vRouter name and the loopback IP address, separated
+by a space.
+
+ensure tells Puppet how to manage the loopback interface. Ensuring present will
+mean that the loopback interface will be created and present on the switch after
+a completed catalog run. Setting this to absent will ensure that the loopback
+interface is not present on the system after the catalog run.
+
+switch is the name of the switch where the IP interface will be created. This
+can be any switch on the fabric. The default value is local, which creates an IP
+interface on the node where the resource was declared.
+
+Example Implementation
+
+CLI:
+CLI (...) > vrouter-loopback-interface-add vrouter-name spine1vrouter ip
+172.16.1.1
+
+Puppet:
+pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
+    ensure => present,
+}
+"
+
   ensurable
 
   newparam(:name) do
+    desc "A combination of the vRouter name and the loopback IP address."
     validate do |d|
       vrouter, ip, overflow = d.split ' '
       if vrouter =~ /[^\w.:-]/
         raise ArgumentError, 'vRouter name can only contain letters, numbers,' +
             ' _, ., :, and -'
       end
-      if ip !~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/
-        raise ArgumentError, 'Name must include an ip'
+      if ip !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[x])\.){3}
+(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+        raise ArgumentError, 'Name must include a valid IP'
       end
       if overflow
         raise ArgumentError, 'Too many arguments'
@@ -33,7 +63,14 @@ Puppet::Type.newtype(:pn_vrouter_loopback) do
   end
 
   newproperty(:switch) do
+    desc "The name of the switch where the IP interface will be created."
     defaultto('local')
+    validate do |value|
+      if value =~ /[^\w.:-]/
+        raise ArgumentError, 'Switch name can only contain letters, ' +
+            'numbers, _, ., :, and -'
+      end
+    end
   end
 
 end

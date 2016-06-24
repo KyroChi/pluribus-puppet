@@ -24,12 +24,19 @@ Puppet::Type.type(:pn_vrouter_loopback).provide(:netvisor) do
     @H = PuppetX::Pluribus::PnHelper.new(resource)
 
     @vrouter, @ip, @index = resource[:name].split ' '
+
+    if cli(*@H.splat_switch, 'vrouter-show', 'name',
+           @vrouter, @H.q) == ''
+      fail('vRouter does not exist')
+    end
+
     loopbacks = cli(*@H.splat_switch, 'vrouter-loopback-interface-show',
         'format', 'ip,index', *@H.pdq).split "\n"
+
     loopbacks.each do |l|
       v, i, x = l.split '%'
       if v.strip == @vrouter and i.strip == @ip
-        @index = x
+        @index = x.strip
         return true
       end
     end
