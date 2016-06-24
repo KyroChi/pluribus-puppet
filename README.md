@@ -431,23 +431,21 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
 ```
 
 ---
-### pn_vrouter_ip
+### pn_vrouter_if
 
-Mangae basic vRouter interfaces. This only creates an IP interface, and to create a [`pn_vrouter_bgp`](#pn_vrouter_bgp) or [`pn_vrouter_vrrp`](#pn_vrouter_vrrp) interface you must first create a `pn_vrouter_ip` interface.
+Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a VRRP interface you must specify both `vrrp_ip` and `vrrp_priority`, otherwise and IP interface will be created. When you create a VRRP interface, pn_vrouter_if creates an IP interface AND a VRRP interface in one resource deceleration.
 
 #### Properties
 
-**`vlan`** is the id of the vLan that the vRouter interface will live on.
+**`name`** is the id of the vLan that the vRouter interface will live on. The name consists of a comma or whitespace seperated list of vLANs, followed by an IP pattern including netmask. The IP follows pattern matching.
 
-**`ensure`** tells Puppet how to manage the IP interface. Ensuring `present` will mean that the IP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the IP interface is not present on the system after the catalog run.
+**`ensure`** tells Puppet how to manage the vRouter interface. Ensuring `present` will mean that the vRouter interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vRouter interface is not present on the system after the catalog run.
 
-**`vrouter`** is the name of the vRouter that will host and manage the IP interface.
+**`vrouter`** is the name of the vRouter that will host and manage the interface.
 
-**`ip`** is the IP address of the interface. This can be passed as a static IP address, however passing IP patterns is allowed. For example passing `x.x.x.1` will look at the value of `vlan` and replace the `x`s in the pattern with the value. While this is fairly useless for configuring a single interface, when you create multiple IP interfaces with one resource deceleration, either by Puppet array or the range operator, this pattern will propagate to every instance of the resource that was declared. Any IP section can be specified with an `x`, except for the final number, which must be declared.
+**_`vrrp_ip`_** is the ip of the VRRP interface. This also obeys IP pattern matching, and the only criteria is that this ip cannot be the same as the IP of the IP interface. Default is `none`.
 
-**`mask`** is simply the ip mask. Pass as `'24'` not `'/24'`.
-
-**_`if_type`_** is the interface type for the IP interface. This can be either `data`, `mgmt` or `span`. The default value for `if_type` is `data`.
+**_`vrrp_priority`_** The VRRP interface priority, this can be a number between `0` and `255`. Default is `none`.
 
 **_`switch`_** is the name of the switch where the IP interface will be created. This can be any switch on the fabric. The default value is `local`, which creates an IP interface on the node where the resource was declared.
 
@@ -458,31 +456,33 @@ CLI:
 CLI (...) > vrouter-create name demo-vrouter vnet demo-vnet-global hw-vrrp-id 18 enable
 CLI (...) > vlan-create id 101 scope fabric
 CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 101.101.101.2/24 vlan 101 if data
+CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 101.101.101.1/24 vlan 101 if data vrrp-id 18 vrrp-primary eth0.101 vrrp-priority 110
+CLI (...) > vlan-create id 102 scope fabric
+CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 102.102.102.2/24 vlan 101 if data
+CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 102.102.102.1/24 vlan 101 if data vrrp-id 18 vrrp-primary eth0.101 vrrp-priority 110
 ```
 
 Puppet:
 ```puppet
 pn_vrouter { 'demo-vrouter':
-    ensure => present,
-    vnet => 'demo-vnet-global',
+    ensure     => present,
+    vnet       => 'demo-vnet-global',
     hw-vrrp-id => 18,
-    service => enable,
-    bgp_as => '65001',
+    service    => enable,
 }
 
-pn_vlan { '101':
-    require => Pn_vrouter['demo-vrouter'],
-    ensure => present,
-    scope => 'fabric',
-    description => 'bgp',
+pn_vlan { '101-102':
+    require     => Pn_vrouter['demo-vrouter'],
+    ensure      => present,
+    scope       => 'fabric',
 }
 
-pn_vrouter_ip { '101':
-    require => Pn_vlan['101'],
-    ensure => present,
-    vrouter => 'demo-vrouter',
-    ip => 'x.x.x.2',
-    mask => '24',
+pn_vrouter_if { '101-102 x.x.x.2/24':
+    require       => Pn_vlan['101'],
+    ensure        => present,
+    vrouter       => 'demo-vrouter',
+    vrrp_ip       => 'x.x.x.1',
+    vrrp_priority => '110',
 }
 ```
 
@@ -510,77 +510,6 @@ Puppet:
 ```puppet
 pn_vrouter_loopback { 'spine1vrouter 172.16.1.1': 
     ensure => present,
-}
-```
-
----
-### pn_vrouter_vrrp
-
-#### Properties
-
-**`vlan`** is the name of the vLAN where the VRRP interface will live.
-
-**`ensure`** tells Puppet how to manage the VRRP interface. Ensuring `present` will mean that the VRRP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the VRRP interface is not present on the system after the catalog run.
-
-**`vrouter`** is the name of the vRouter that will host and manage the VRRP interface.
-
-**`ip`** is the IP address of the interface. This can be passed as a static IP address, however passing IP patterns is allowed. For example passing `x.x.x.1` will look at the value of `vlan` and replace the `x`s in the pattern with the value. While this is fairly useless for configuring a single interface, when you create multiple IP interfaces with one resource deceleration, either by Puppet array or the range operator, this pattern will propagate to every instance of the resource that was declared. Any IP section can be specified with an `x`, except for the final number, which must be declared.
-
-**`mask`** is simply the ip mask. Pass as `'24'` not `'/24'`.
-
-**_`if_type`_** is the interface type for the VRRP interface. This can be either `data`, `mgmt` or `span`. The default value for `if_type` is `data`.
-
-**_`vrrp_id`_** is the VRRP ID for the interface. This property must be an interger. The default value is `none` and will not create a VRRP interface.
-
-**_`primary_ip`_** is the primary IP of the interface. The default value is `none` and will not create a VRRP interface.
-
-**_`vrrp_priority`_** is the priority for the VRRP interface. This must be a integer between `0` and `255`. The default value is `none` and will not create a VRRP interface.
-
-**_`switch`_** is the name of the switch where the VRRP interface will be created. The switch must be on the same fabric as the node where the resource was declared. The default value is `local` and will create a VRRP interface on the node where the resource was declared.
-
-#### Example Implementation
-
-CLI:
-```
-CLI (...) > vrouter-create name demo-vrouter vnet demo-vnet-global hw-vrrp-id 18 enable
-CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 101.101.101.3/24 vlan 101 if data
-CLI (...) > vrouter-interface-add vrouter-name demo-vrouter ip 101.101.101.1/24 vlan 101 if data vrrp-id 18 vrrp-primary eth0.101 vrrp-priority 110
-```
-
-Puppet:
-```puppet
-pn_vrouter { 'demo-vrouter':
-    ensure => present,
-    vnet => 'demo-vnet-global',
-    hw-vrrp-id => 18,
-    service => enable,
-    bgp_as => '65001',
-}
-
-pn_vlan { '101':
-    require => Pn_vrouter['demo-vrouter'],
-    ensure => present,
-    scope => 'fabric',
-    description => 'bgp',
-}
-
-pn_vrouter_ip { '101':
-    require => Pn_vlan['101'],
-    ensure => present,
-    vrouter => 'demo-vrouter',
-    ip => 'x.x.x.2',
-    mask => '24',
-}
-
-pn_vrouter_vrrp { '101':
-    require => Pn_vlan['101'],
-    ensure => present,
-    vrouter => 'demo-vrouter',
-    ip => 'x.x.x.2',
-    mask => '24',
-    vrrp_id => 18,
-    primary_ip => 'x.x.x.1',
-    vrrp_priority => '110',
 }
 ```
 
