@@ -30,12 +30,14 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   # @return: A string containing the requested information.
   #
   def get_vrouter_info(format, name="#{resource[:name]}")
-    cli('--quiet', *@H.splat_switch, 'vrouter-show', 'name', name,
+    cli(@H.q, *@H.splat_switch, 'vrouter-show', 'name', name,
         'format', format, 'no-show-headers').strip
   end
 
   def exists?
     @H = PuppetX::Pluribus::PnHelper.new(resource)
+    @BGP = (resource[:bgp_as] != '' and resource[:router_id] != 'none') ?
+        true : false
     unless cli('switch', resource[:switch], @H.q) == ''
       fail("Switch #{resource[:switch]} could not be found on the fabric.")
     end
@@ -53,14 +55,18 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
         'name', resource[:name], 'vnet', resource[:vnet],
         'hw-vrrp-id', resource[:hw_vrrp_id],
         resource[:service])
-    if resource[:bgp_as] != ''
+    if @BGP
       cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-          'name', resource[:name], 'bgp-as', resource[:bgp_as])
+          'name', resource[:name], 'bgp-as', resource[:bgp_as],
+          'router-id', resource[:router_id])
+    elsif resource[:bgp_as] != '' and resource[:router_id] == 'none' or
+        resource[:bgp_as] == '' and resource[:router_id] != 'none'
+      warn('All BGP parameters must be supplied to enable BGP on this vRouter')
     end
   end
 
   def destroy
-    cli('--quiet', *@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
+    cli(*@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
 
   def switch
@@ -98,12 +104,31 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def bgp_as
-    get_vrouter_info('bgp-as')
+    if @BGP
+      get_vrouter_info('bgp-as')
+    end
+    resource[:bgp_as]
   end
 
   def bgp_as=(value)
     cli('--quiet', *@H.splat_switch, 'vrouter-modify',
         'name', resource[:name], 'bgp-as', value)
+  end
+
+  def router_id;
+    if @BGP
+      id = get_vrouter_info('router-id')
+      if id == '' and resource[:router_id] == 'none'
+        return resource[:router_id]
+      end
+      return id
+    end
+    resource[:router_id]
+  end
+
+  def router_id=(value)
+    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+        'name', resource[:name], 'router-id', value)
   end
 
 end

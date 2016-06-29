@@ -37,6 +37,9 @@ bgp_as is the AS number for any BGP interfaces that you will create later. Can
 be any integer. By default this property is set to '' and tells Puppet not to
 set up BGP on the vRouter. (This can always be changed in the manifest later.)
 
+router_id is the IP address assigned to the vRouter, both router_id and bgp_as
+must be specified to create a vRouter that can host a BGP interface.
+
 switch the switch where the vRouter will live, this can be the name of any
 switch on the fabric. By deafult this value is set to local and creates a
 vRouter on whatever node is specified in the manifest.
@@ -93,12 +96,13 @@ pn_vrouter { 'demo-vrouter':
   end
 
   newproperty(:service) do
-    desc ""
+    desc "Enables or disables the vRouter."
     defaultto(:enable)
     newvalues(:enable, :disable)
   end
 
   newproperty(:hw_vrrp_id) do
+    desc "A hardware id for VRRP interfaces that may live on this vRouter."
     validate do |value|
       if value =~ /[^\d*$]/
         raise ArgumentError, 'hw_vrrp_id must be a number'
@@ -107,10 +111,22 @@ pn_vrouter { 'demo-vrouter':
   end
 
   newproperty(:bgp_as) do
+    desc "The AS number for any BGP interfaces that will be created later."
     defaultto('')
     validate do |value|
       if value =~ /[^\d*$]/ and value != ''
         raise ArgumentError, 'bgp_as must be a number'
+      end
+    end
+  end
+
+  newproperty(:router_id) do
+    desc "The IP router ID for the vRouter."
+    defaultto('none')
+    validate do |value|
+      if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
+{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ and value != 'none'
+        raise ArgumentError, "Router ID must be a valid IP address"
       end
     end
   end

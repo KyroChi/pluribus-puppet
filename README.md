@@ -354,6 +354,9 @@ Manage vRouters.
 
 **_`bgp_as`_** is the AS number for any BGP interfaces that you will create later. Can be any integer. By default this property is set to `''` and tells Puppet not to set up BGP on the vRouter. (This can always be changed in the manifest later.)
 
+**_`router_id`_** is the IP address assigned to the vRouter, both `router_id` and `bgp_as` must be specified to create a vRouter that can host a BGP interface.
+
+
 **_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 
 #### Example Implementation
@@ -386,6 +389,8 @@ Manage vRouter BGP interfaces. To create a BGP interface you must first create a
 
 **`bgp_as`** is the AS ID for the BGP interface.
 
+**_`increment`_** is how much the address will be incremented by in a range.
+
 **_`switch`_** is the name of the switch where the vRouter BGP interface will be hosted. This can be any switch on the fabric. The default value is `local` which creates a BGP interface on the node where the resource was declared.
 
 #### Example Implementation
@@ -406,6 +411,7 @@ pn_vrouter { 'demo-vrouter':
     hw-vrrp-id => 18,
     service => enable,
     bgp_as => '65001',
+    router_id => '172.168.85.8',
 }
 
 pn_vlan { '101':
@@ -427,6 +433,13 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
     require => Pn_vrouter_ip['101'],
     ensure => present,
     bgp_as => '65001',
+}
+
+pn_vrouter_bgp { 'demo-vrouter 101.101.101.2-10':
+    require => Pn_vrouter_ip['101'],
+    ensure => present,
+    bgp_as => '65001',
+    increment => '2',
 }
 ```
 

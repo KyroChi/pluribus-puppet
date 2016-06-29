@@ -188,4 +188,47 @@ pn_vrouter { 'test-vrouter-1':
   hw_vrrp_id => 'a',
 }
 
+# should warn that both BGP params aren't specified
+pn_vrouter { 'test-vrouter':
+  ensure     => present,
+  switch     => 'dorado-tme-1',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+  router_id  => '198.175.5.10',
+}
+
+# should pass
+pn_vrouter { 'test-vrouter':
+  ensure     => present,
+  switch     => 'dorado-tme-1',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+  bgp_as     => 65000,
+  router_id  => '198.175.5.10',
+}
+
+# should pass and change router id
+pn_vrouter { 'test-vrouter':
+  ensure     => present,
+  switch     => 'dorado-tme-1',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+  bgp_as     => 65000,
+  router_id  => '198.175.5.6',
+}
+
+# remove
+pn_vrouter { 'test-vrouter':
+  ensure     => absent,
+  switch     => 'dorado-tme-1',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+  bgp_as     => 65000,
+  router_id  => '198.175.5.6',
+}
+
 # END
