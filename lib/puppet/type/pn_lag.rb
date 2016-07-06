@@ -102,18 +102,19 @@ node your-pluribus-switch {
     desc "Name of the switch where the LAG will be created. Must be on the" +
              " same fabric as the Puppet Agent"
     validate do |value|
-      if value =~ /\s/
+      if value =~ /[^\w.:-]/
         raise ArgumentError, "Invalid switch name #{value}"
       end
     end
   end
 
   newproperty(:ports) do
-    desc "Comma separated list, no whitespace, all, or none. (ie. '1,2,3,4')"
+    desc "Comma separated list, 'all', or 'none'. (ie. '1,2,3,4')"
     defaultto('none')
     validate do |value|
-      if value =~ /\s/
-        raise ArgumentError, 'Ports cannot be separated by whitespace'
+      unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/ \
+      or 'none'
+        raise ArgumentError, 'Ports must be a number or range of numbers'
       end
     end
   end
