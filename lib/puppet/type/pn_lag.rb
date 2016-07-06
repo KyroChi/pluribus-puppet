@@ -16,31 +16,78 @@ Puppet::Type.newtype(:pn_lag) do
 
   # Handle serious error checking with provider instead of type.
 
-  @doc = "Manage LAGs/Trunks
+  @doc = "Allows for the management of trunks or LAGs.
 
-~~~puppet
-pn_lag { '<name>':
-    switch => <switch-name>,
-    ensure => <:present|:absent,
-    ports => <ports>
-}
-~~~
+Properties
 
-name: The name of the LAG to manage
-switch: The name of the Switch where the LAG will live
-ensure: Present or Absent, does LAG exist
-ports: none, all, or a comma separated list of ports with no whitespace.
+name sets the trunk name. This is the type's namevar and is required. This can
+be any string as long as it only contains letters, numbers, _, ., :, and -.
 
-See examples in doc/pn_lag"
+ensure tells Puppet how to manage the trunk. Ensuring present will mean that the
+trunk will be created and present on the switch after a completed catalog run.
+Setting this to absent will ensure that the trunk is not present on the system
+after the catalog run.
+
+switch is the name of the switch where the link aggregation will occur. This
+should be a switch that is both on the same network as the Puppet agent and the
+same fabric. If Puppet cannot find the specified switch it will throw an error
+during the catalog run.
+
+ports are the ports to be aggregated. This should be passed as a comma separated
+list, no whitespace, and port ranges are allowed.
+
+Example Implementation
+
+The following example shows how to create trunks between two clusters. The first
+cluster is called spine-cluster and contains the two nodes spine-01 and
+spine-02. The second cluster is called leaf-cluster and contains the two nodes
+leaf-01 and leaf-02. spine-01 is connected to leaf-01 on ports 11 and 12, and
+connected to leaf-02 on 13 and 14. spine-02 is connected to leaf-01 on ports
+15 and 16, and connected to leaf-02 on 17 and 18. The leaf to spine ports are
+the same numbers for the leaves.
+
+CLI:
+
+CLI (...) > switch spine-01 trunk-create name spine01-to-leaf ports 11,12,13,14
+Created trunk spine01-to-leaf, id <id>
+CLI (...) > switch spine-02 trunk-create name spine02-to-leaf ports 15,16,17,18
+Created trunk spine02-to-leaf, id <id>
+CLI (...) > switch leaf-01 trunk-create name leaf01-to-spine ports 11,12,15,16
+Created trunk leaf01-to-spine, id <id>
+CLI (...) > switch leaf-02 trunk-create name leaf02-to-spine ports 13,14,17,18
+Created trunk leaf02-to-spine, id <id>
+Puppet:
+
+node your-pluribus-switch {
+
+    pn_lag { 'spine01-to-leaf':
+        ensure => present,
+        switch => 'spine-01',
+        ports  => '11-14',
+    }
+
+    pn_lag { 'spine02-to-leaf':
+        ensure => present,
+        switch => 'spine-02',
+        ports  => '15-18',
+    }
+
+    pn_lag { 'leaf01-to-spine':
+        ensure => present,
+        switch => 'leaf-01',
+        ports  => '11,12,15,16',
+    }
+
+    pn_lag { 'leaf02-to-spine':
+        ensure => present,
+        switch => 'leaf-02',
+        ports  => '13,14,17,18',
+    }
+
+}"
 
   ensurable
 
-  # LAG name must follow the naming conventions set forth by the cli. Since
-  # LAG names are not unique the system cannot use self.prefetch and
-  # self.instances to gather resources. The switch resource is enough to develop
-  # individuality between the LAGs.
-  # @return: nil
-  #
   newparam(:name, :namevar => true) do
     desc "Name of the LAG to create"
     validate do |value|
@@ -51,13 +98,7 @@ See examples in doc/pn_lag"
     end
   end
 
-  # Since on a fabric level LAG names do not need to be unique, the switch is a
-  # required parameter that will tell the provider where the LAG should be
-  # created on a fabric wide level.
-  # @return: nil
-  #
   newproperty(:switch) do
-    # Add support for passing arrays to this property
     desc "Name of the switch where the LAG will be created. Must be on the" +
              " same fabric as the Puppet Agent"
     validate do |value|
@@ -67,11 +108,6 @@ See examples in doc/pn_lag"
     end
   end
 
-  # Ports for the LAG to aggregate. Since the cli accepts a comma-separated list
-  # the easiest way to pass the ports as a parameter to the provider is to pass
-  # them as a comma separated list.
-  # @return: nil
-  #
   newproperty(:ports) do
     desc "Comma separated list, no whitespace, all, or none. (ie. '1,2,3,4')"
     defaultto('none')
