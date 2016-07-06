@@ -29,13 +29,13 @@ If you are a Pluribus employee needing to quickly configure large networks for t
 
 ## Module Description
 
-This module allows for the management of Pluribus switches through the Puppet DSL and Puppet manifest files by adding new Types and Providers to support Netvisor functionality.
+This module allows for the management of Pluribus switches through the Puppet DSL and Puppet manifest files by adding new Types and Providers to support Netvisor functionality. Users of this module can remotely configure and manage the setup and maintenance of Pluribus switches, and the added functionality makes the deployment of Pluribus switches in your data center quick and painless.
 
 ## Setup
 
 To use Pluribus Puppet you must first install and configure a Puppet master server and a Pupept agent on one, all, or some of the switches in your fabric. A guide for installing the [Puppet Master](https://docs.puppet.com/puppetserver/2.4/install_from_packages.html) and one for installing the [Puppet Agent](https://docs.puppet.com/puppet/latest/reference/install_linux.html).
 
-After installing the master and agent and getting them configured install the Pluribus Puppet module from [Forge]().
+After installing the master and agent and getting them configured install the Pluribus Puppet module from [Forge](). Once installed, you will have access to the functionality provided by this module, including all of the types listed in the type catalog. Once installed, these types can be used in your Puppet manifests to configure Pluribus Network switches.
 
 ## Usage
 
@@ -46,7 +46,7 @@ For examples, creating vLANs on the cli is done with the following command:
 CLI (...) > vlan-create id 101 scope fabric ports none
 ```
 
-With Puppet, this same vlan can be not created, but managed with the following deceleration:
+With Puppet, this same vLAN can be not only created, but managed with the following deceleration:
 ```puppet
 pn_vlan { '101':
     ensure => present,
@@ -529,8 +529,8 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
 ---
 ## Limitations
 
-Pluribus Puppet currently only runs on ONVL distributions of Netvisor.
+Pluribus Puppet currently only runs on ONVL distributions of Netvisor. This is because the Puppet does not support all distributions of Solaris and cannot be run on the nvOS distribution. This problem is being looked into and hopefully nvOS will be supported alongside ONVL in the near future.
 
 ## Additional Resources
 
-To be added.
+There are currently no additional resources for the Pluribus Puppet module.
