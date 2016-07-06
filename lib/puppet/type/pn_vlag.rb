@@ -43,14 +43,6 @@ name: The name of the VLAG to be created.  No default, this is a required
 ensure: Should the VLAG be present or absent.  No default, this is a required
   parameter.
 
-switch: The name of the switch where the VLAG will live.  No default, this is a
-  required parameter.
-
-peer-switch: The name of the peer-switch (same cluster) on the VLAG.  No
-  default, this is a required parameter.
-
-  NOTE: The VLAG only needs to be specified once for the switch and its peer
-
 port: The port on the switch to connect the VLAG.  No default, this is a
   required parameter.
 
@@ -86,8 +78,7 @@ node puppet-agent.pluribusnetworks.com {
     }
     pn_vlag { 'spine-to-leaf3':
         ensure => present,
-        switch => onlvspine1,
-        peer_switch => onvlspine2,
+        cluster => 'spine1-spine2',
         port => spine1-to-leaf3,
         peer_port => spine2-to-leaf3,
         mode => active,
@@ -99,8 +90,7 @@ node puppet-agent.pluribusnetworks.com {
     }
     pn_vlag { 'spine-to-leaf4':
         ensure => present,
-        switch => onlvspine1,
-        peer_switch => onvlspine2,
+        cluster => 'spine1-spine2',
         port => spine1-to-leaf4,
         peer_port => spine2-to-leaf4,
         mode => active,
@@ -115,11 +105,8 @@ node puppet-agent.pluribusnetworks.com {
 
   ensurable
 
-  # The name of the vlan. Must follow the cli naming rules; can only contain
-  # letters, numbers, _, ., :, and -
-  #
-  newparam(:name, :namevar => true) do
-    desc "VLAN name"
+  newparam(:name) do
+    desc "vLAG name"
     validate do |value|
       if value =~ /[^\w.:-]/
         raise ArgumentError, 'VLAG name can only contain letters, numbers, ' +
@@ -128,37 +115,15 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-  # The name of one of the switches in the VLAN. switch and peer-switch are
-  # technically interchangeable. As long as they are in a cluster the VLAG
-  # should be created.
-  #
-  newproperty(:switch) do
-    desc "Name of the switch where the VLAG will be created. Must be on the" +
-             ' same fabric as the Puppet Agent.'
+  newproperty(:cluster) do
+    desc "Name of the cluster whose two switches will be included in the vLAG"
     validate do |value|
       if value =~ /[^\w.:-]/
-        raise ArgumentError, "Invalid switch name #{value}"
+        raise ArgumentError, "Invalid cluster name #{value}"
       end
     end
   end
 
-  # The name of the peer-switch in the cluster. This switch is the VLAG peer of
-  # switch. It must be in the same cluster and as such on the same fabric.
-  #
-  newproperty(:peer_switch) do
-    desc "Name of the peer-switch where the VLAG will be created. Must be on " +
-             'the same fabric as the Puppet Agent.'
-    validate do |value|
-      if value =~ /\s/
-        raise ArgumentError, "Invalid peer-switch name #{value}"
-      end
-    end
-  end
-
-  # The port on the switch where the VLAN will be created. This should be a name
-  # preferably describing the VLAG being created. Can only contain letters,
-  # numbers, _, ., :, and -
-  #
   newproperty(:port) do
     desc "Name of the port where the VLAG will be created."
     validate do |value|
@@ -168,10 +133,6 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-  # The port on the peer switch where the VLAN will be created. Must follow the
-  # cli naming guidelines and should describe the VLAG being created. Can only
-  # contain letters, numbers, _, ., :, and -
-  #
   newproperty(:peer_port) do
     desc "Name of the port on the peer-switch where the VLAG will be created."
     validate do |value|
@@ -181,53 +142,36 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-
-  # The vlag mode. The modes active-active and active-standby on the cli are
-  # notated by active and standby respectively.
-  #
   newproperty(:mode) do
     desc "The VLAG mode, can be either active or standby."
     defaultto(:active)
     newvalues(:active, :standby)
   end
 
-  # The L2 failover mode. This can either be move (failover-move-L2) or ignore
-  # (failover-ignore-L2).
-  #
   newproperty(:failover) do
     desc "The L2 failover type, can either be move or ignore."
     defaultto(:move)
     newvalues(:move, :ignore)
   end
 
-  # The lacp mode. Can be set to off, passive or active.
-  #
   newproperty(:lacp_mode) do
     desc "The VLAGs lacp mode, can be off, passive or active."
     defaultto(:active)
     newvalues(:off, :passive, :active)
   end
 
-  # Choose a lacp timeout for the VLAG, can be either fast (:fast) or slow
-  # (:slow). This property's default value is :fast.
-  #
   newproperty(:lacp_timeout) do
     desc "The lacp timeout can either be fast or slow."
     defaultto(:fast)
     newvalues(:slow, :fast)
   end
 
-  # Choose lacp fallback mode. This can be either bundled (:bundle) or
-  # individual (:individual). This property's default value is :bundle.
-  #
   newproperty(:lacp_fallback) do
     desc "The lacp fallback, can be bundle or individual."
     defaultto(:bundle)
     newvalues(:bundle, :individual)
   end
 
-  # The timeout in seconds for lacp fallback. Must be a number between 30 and 60
-  #
   newproperty(:lacp_fallback_timeout) do
     desc "The lacp fallback timeout in seconds."
     defaultto('50')

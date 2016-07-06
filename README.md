@@ -29,13 +29,13 @@ If you are a Pluribus employee needing to quickly configure large networks for t
 
 ## Module Description
 
-This module allows for the management of Pluribus switches through the Puppet DSL and Puppet manifest files by adding new Types and Providers to support Netvisor functionality.
+This module allows for the management of Pluribus switches through the Puppet DSL and Puppet manifest files by adding new Types and Providers to support Netvisor functionality. Users of this module can remotely configure and manage the setup and maintenance of Pluribus switches, and the added functionality makes the deployment of Pluribus switches in your data center quick and painless.
 
 ## Setup
 
 To use Pluribus Puppet you must first install and configure a Puppet master server and a Pupept agent on one, all, or some of the switches in your fabric. A guide for installing the [Puppet Master](https://docs.puppet.com/puppetserver/2.4/install_from_packages.html) and one for installing the [Puppet Agent](https://docs.puppet.com/puppet/latest/reference/install_linux.html).
 
-After installing the master and agent and getting them configured install the Pluribus Puppet module from [Forge]().
+After installing the master and agent and getting them configured install the Pluribus Puppet module from [Forge](). Once installed, you will have access to the functionality provided by this module, including all of the types listed in the type catalog. Once installed, these types can be used in your Puppet manifests to configure Pluribus Network switches.
 
 ## Usage
 
@@ -46,7 +46,7 @@ For examples, creating vLANs on the cli is done with the following command:
 CLI (...) > vlan-create id 101 scope fabric ports none
 ```
 
-With Puppet, this same vlan can be not created, but managed with the following deceleration:
+With Puppet, this same vLAN can be not only created, but managed with the following deceleration:
 ```puppet
 pn_vlan { '101':
     ensure => present,
@@ -229,9 +229,7 @@ Allow management of vLAGs. You must have LAGs/trunks in place on the switches in
 
 **`ensure`** tells Puppet how to manage the vLAG. Ensuring `present` will mean that the vLAG will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vLAG is not present on the system after the catalog run.
 
-**`switch`** is the name of the first switch of the vLAG. switch and peer-switch are interchangeable, however their respective ports must match.
-
-**`peer-switch`** is the second switch in the vLAG.
+**`cluster`** tells Puppet which cluster the vLAG should be applied to.
 
 **`port`** is the vLAG port on `switch`. 
 
@@ -281,8 +279,7 @@ pn_lag { 'spine02-to-leaf':
 
 pn_vlag { 'spine-to-leafs':
     ensure                => present,
-    switch                => 'spine-01',
-    peer_switch           => 'spine-02',
+    cluster               => 'spine-cluster',
     port                  => 'spine01-to-leaf',
     peer-port             => 'spine02-to-leaf',
     mode                  => active,
@@ -316,6 +313,8 @@ Manage vLANs.
 **_`ports`_** is a comma separated list of ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
 
 **_`untagged_ports`_** is a comma separated list of untagged ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
+
+**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 
 #### Example Implementation
 
@@ -355,7 +354,6 @@ Manage vRouters.
 **_`bgp_as`_** is the AS number for any BGP interfaces that you will create later. Can be any integer. By default this property is set to `''` and tells Puppet not to set up BGP on the vRouter. (This can always be changed in the manifest later.)
 
 **_`router_id`_** is the IP address assigned to the vRouter, both `router_id` and `bgp_as` must be specified to create a vRouter that can host a BGP interface.
-
 
 **_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 
@@ -529,8 +527,8 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
 ---
 ## Limitations
 
-Pluribus Puppet currently only runs on ONVL distributions of Netvisor.
+Pluribus Puppet currently only runs on ONVL distributions of Netvisor. This is because the Puppet does not support all distributions of Solaris and cannot be run on the nvOS distribution. This problem is being looked into and hopefully nvOS will be supported alongside ONVL in the near future.
 
 ## Additional Resources
 
-To be added.
+There are currently no additional resources for the Pluribus Puppet module.

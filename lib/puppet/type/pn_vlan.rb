@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+    File.join(File.dirname(__FILE__),
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
+
 Puppet::Type.newtype(:pn_vlan) do
 
   desc "Manage vLANs.
@@ -72,9 +78,8 @@ pn_vlan { '101':
       unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/
         raise ArgumentError, 'ID must be a number or range of numbers'
       end
-      @H = PuppetX::Pluribus::PnHelper.new
-      @ids = @H.deconstruct_range(value)
-      @ids.each do |i|
+      ids = deconstruct_range(value)
+      ids.each do |i|
         unless i.to_i.between?(2, 4092)
           raise ArgumentError, 'ID must be between 2 and 4092'
         end
@@ -107,11 +112,34 @@ pn_vlan { '101':
   newproperty(:ports) do
     desc 'no whitespace comma seperated ports and port ranges'
     defaultto('none')
+    validate do |value|
+      unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/ \
+                      or 'none'
+        raise ArgumentError, 'Ports must be a number or range of numbers'
+      end
+    end
   end
 
   newproperty(:untagged_ports) do
     desc 'no whitespace comma seperated ports and port ranges'
-    defaultto(:none)
+    defaultto('none')
+    validate do |value|
+      unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/ \
+                      or 'none'
+        raise ArgumentError, 'Untagged ports must be a number or range of numbers'
+      end
+    end
+  end
+
+  newproperty(:switch) do
+    desc 'Switch where vLAN will be created'
+    defaultto('local')
+    validate do |value|
+      if value =~ /[^\w.:-]/
+        raise ArgumentError, 'Switch name can only contain letters, numbers, ' +
+            '_, ., :, and -'
+      end
+    end
   end
 
 end
