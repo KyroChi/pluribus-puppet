@@ -317,6 +317,8 @@ Manage vLANs.
 
 **_`untagged_ports`_** is a comma separated list of untagged ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
 
+**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
+
 #### Example Implementation
 
 CLI:
@@ -355,7 +357,6 @@ Manage vRouters.
 **_`bgp_as`_** is the AS number for any BGP interfaces that you will create later. Can be any integer. By default this property is set to `''` and tells Puppet not to set up BGP on the vRouter. (This can always be changed in the manifest later.)
 
 **_`router_id`_** is the IP address assigned to the vRouter, both `router_id` and `bgp_as` must be specified to create a vRouter that can host a BGP interface.
-
 
 **_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 

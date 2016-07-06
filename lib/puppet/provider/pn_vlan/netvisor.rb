@@ -14,39 +14,46 @@
 
 require File.expand_path(
     File.join(File.dirname(__FILE__),
-              '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vlan).provide(:netvisor) do
-
-  # Don't pre-fetch instances, on systems with established VLAN networks this
-  # will cause puppet to spend ~2 seconds per VLAN and on systems with 100s or
-  # 1000s of VLANs this will be prohibitively time-consuming
 
   commands :cli => 'cli'
 
   def get_vlan_info(id, format)
-    info = cli('--quiet', 'vlan-show', 'id', id, 'format', format,
-               'no-show-headers').split("\n")
+      info = cli(Q, 'vlan-show', 'id', id, 'format', format,
+                 'no-show-headers').split("\n")
     if info[0]
       info[0].strip!
     end
   end
 
   def exists?
-    @H = PuppetX::Pluribus::PnHelper.new(resource)
-    @ids = @H.deconstruct_range
+    @ids = deconstruct_range(resource[:name])
     for id in @ids do
-      unless get_vlan_info(id, 'id')
-        create
+      if get_vlan_info(id, 'id')
+        if resource[:ensure] == :absent
+          return true
+        end
+      else
+        if resource[:ensure] == :present
+          return false
+        end
       end
     end
-    true
+    if resource[:ensure] == :present
+      true
+    else
+      false
+    end
   end
 
   def create
     for id in @ids do
       unless get_vlan_info(id, 'id')
-        cli('vlan-create', 'id', id, 'scope', resource[:scope],
+        cli(*splat_switch, 'vlan-create', 'id', id, 'scope', resource[:scope],
             'ports', resource[:ports], 'description', resource[:description])
       end
     end
@@ -55,14 +62,15 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   def destroy
     for id in @ids do
       if get_vlan_info(id, 'id')
+        switch = get_vlan_info(id, 'switch')
         begin
-          cli('vlan-delete', 'id', id)
+          cli(*splat_switch(switch), 'vlan-delete', 'id', id)
         rescue => detail
           if detail =~ /router interface/
-            nic = cli('vrouter-interface-show', 'vlan', id, 'format', 'nic',
-                      @H.pdq).split '%'
-            cli('vrouter-interface-remove', 'vrouter-name', nic[0],
-                'nic', nic[1].strip)
+            nic = cli(*splat_switch(switch), 'vrouter-interface-show', 'vlan',
+                      id, 'format', 'nic', PDQ).split '%'
+            cli(*splat_switch(switch), 'vrouter-interface-remove',
+                'vrouter-name', nic[0], 'nic', nic[1].strip)
           end
         end
       end
@@ -72,7 +80,6 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   def scope
     for id in @ids do
       if get_vlan_info(id, 'scope') != resource[:scope].to_s
-        puts get_vlan_info(id, 'scope')
         return "Incorrect Scope"
       end
     end
@@ -95,7 +102,12 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
 
   def description=(value)
     for id in @ids do
-      cli('vlan-modify', 'id', id, 'description', value)
+      if get_vlan_info(id, 'switch') != resource[:switch]
+        cli(*splat_switch(get_vlan_info(id, 'switch')), 'vlan-modify',
+            'id', id, 'description', value)
+      else
+        cli(*splat_switch, 'vlan-modify', 'id', id, 'description', value)
+      end
     end
   end
 
@@ -150,6 +162,10 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   def untagged_ports=(value)
     destroy
     create
+  end
+
+  def switch
+    resource[:switch]
   end
 
 end
