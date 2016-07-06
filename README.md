@@ -229,9 +229,7 @@ Allow management of vLAGs. You must have LAGs/trunks in place on the switches in
 
 **`ensure`** tells Puppet how to manage the vLAG. Ensuring `present` will mean that the vLAG will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vLAG is not present on the system after the catalog run.
 
-**`switch`** is the name of the first switch of the vLAG. switch and peer-switch are interchangeable, however their respective ports must match.
-
-**`peer-switch`** is the second switch in the vLAG.
+**`cluster`** tells Puppet which cluster the vLAG should be applied to.
 
 **`port`** is the vLAG port on `switch`. 
 
@@ -281,8 +279,7 @@ pn_lag { 'spine02-to-leaf':
 
 pn_vlag { 'spine-to-leafs':
     ensure                => present,
-    switch                => 'spine-01',
-    peer_switch           => 'spine-02',
+    cluster               => 'spine-cluster',
     port                  => 'spine01-to-leaf',
     peer-port             => 'spine02-to-leaf',
     mode                  => active,
