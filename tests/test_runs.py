@@ -27,7 +27,7 @@ def puppet_run(manifest=[]):
     print o.read()
 
     call(['puppet', 'apply',
-          '/etc/puppet/modules/pn-puppet-module/tests/run.pp'])
+          os.getcwd() + '/run.pp'])
 
     o.close()
 

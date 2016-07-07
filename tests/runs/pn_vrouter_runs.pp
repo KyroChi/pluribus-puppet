@@ -17,7 +17,7 @@
 # Should pass, creating a new vrouter
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -26,7 +26,7 @@ pn_vrouter { 'test-vrouter':
 # should pass, already exists
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -35,7 +35,7 @@ pn_vrouter { 'test-vrouter':
 # should pass, deleting vrouter
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -44,7 +44,7 @@ pn_vrouter { 'test-vrouter':
 # should pass, already deleted
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -53,7 +53,7 @@ pn_vrouter { 'test-vrouter':
 # vRouters on multiple switches
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -61,7 +61,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
-  switch     => 'dorado-tme-2',
+  switch     => 'squirtle.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -70,7 +70,7 @@ pn_vrouter { 'test-vrouter-2':
 # again, should do nothing
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -78,7 +78,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
-  switch     => 'dorado-tme-2',
+  switch     => 'squirtle.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -87,7 +87,7 @@ pn_vrouter { 'test-vrouter-2':
 # delete vrouters on multiple switches
 pn_vrouter { 'test-vrouter-1':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -95,7 +95,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => absent,
-  switch     => 'dorado-tme-2',
+  switch     => 'squirtle.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -104,7 +104,7 @@ pn_vrouter { 'test-vrouter-2':
 # delete vrouters on multiple switches again, nothing should happen
 pn_vrouter { 'test-vrouter-1':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -112,7 +112,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => absent,
-  switch     => 'dorado-tme-2',
+  switch     => 'squirtle.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -121,7 +121,7 @@ pn_vrouter { 'test-vrouter-2':
 # should fail, can't have two vrouters on the same switch
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -129,7 +129,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'squirtle.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -138,7 +138,7 @@ pn_vrouter { 'test-vrouter-2':
 # clean up last test
 pn_vrouter { 'test-vrouter-1':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -146,7 +146,7 @@ pn_vrouter { 'test-vrouter-1':
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -155,7 +155,7 @@ pn_vrouter { 'test-vrouter-2':
 # should fail, name is wrong
 pn_vrouter { 'test vrouter 1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -173,7 +173,7 @@ pn_vrouter { 'test-vrouter-fake':
 # should fail, vnet doesn't exist
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global-fake',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -182,7 +182,7 @@ pn_vrouter { 'test-vrouter-1':
 # should fail, hw_vrrp_id isn't a number
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 'a',
@@ -191,7 +191,7 @@ pn_vrouter { 'test-vrouter-1':
 # should warn that both BGP params aren't specified
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -201,7 +201,7 @@ pn_vrouter { 'test-vrouter':
 # should pass
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -212,7 +212,7 @@ pn_vrouter { 'test-vrouter':
 # should pass and change router id
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -223,7 +223,7 @@ pn_vrouter { 'test-vrouter':
 # remove
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
