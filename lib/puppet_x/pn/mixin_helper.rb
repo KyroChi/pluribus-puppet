@@ -58,7 +58,7 @@ module PuppetX
       def get_nic(include_vlan=0, vrouter_name="#{resource[:vrouter]}",
                   ipin="#{resource[:ip]}", mask='24', vlan='101')
         out = cli(*splat_switch, "vrouter-interface-show", "vrouter-name",
-               "#{vrouter_name}", "format", "nic,ip", *pdq)
+               "#{vrouter_name}", "format", "nic,ip", PDQ)
         out.split("\n").each do |interface|
           vrouter, nic, ip = interface.split('%')
           if ip.strip == build_ip(0, ipin, mask, vlan)
@@ -66,6 +66,44 @@ module PuppetX
           end
         end
         ''
+      end
+
+      # Helper method to build an ip address string
+      # @param nomask: This value can be anything. If it is not included it will
+      #     by default not append a netmask to the generated ip. If you pass
+      #     this argument as 0 it will not append a mask, any other value for
+      #     this argument will append the netmask to the ip.
+      # @param ip: The base ip to be built, this can either be all numbers, or
+      #     an 'x' can be substituted and will be replaced with the vlan
+      #     parameter. For example 'x.x.x.0', '255.255.255.5' and '255.x.255.4'
+      #     are all valid examples. Avoid passing the final number as an 'x'.
+      #     For example '255.255.255.x' is not recommended, however it will not
+      #     throw an error.
+      # @param mask: The netmask to be appended to the ip, do not include a '/',
+      #     just the actual number of the netmask. Netmask appending can be
+      #     toggled with the 'nomask' parameter.
+      # @param vlan: The vlan id. This value will replace any instance of 'x' in
+      #     the submitted ip parameter. This parameter's default value is 0.
+      # @return: A string containing the generated ipv4 ip.
+      #
+      def build_ip(nomask=0, ip="#{@resource[:ip]}", mask="#{@resource[:mask]}",
+                   vlan="#{@resource[:vlan]}")
+        k = ip.split('.')
+        ip_out = ''
+        for i in (0..3)
+          if k[i] == 'x'
+            k[i] = "#{vlan}"
+          end
+          if i == 3
+            ip_out += "#{k[i]}"
+          else
+            ip_out += "#{k[i]}."
+          end
+        end
+        unless nomask == 0
+          ip_out += "/#{mask}"
+        end
+        ip_out
       end
 
     end
