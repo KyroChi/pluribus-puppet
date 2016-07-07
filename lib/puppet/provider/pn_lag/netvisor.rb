@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 require File.expand_path(
     File.join(File.dirname(__FILE__),
               '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))

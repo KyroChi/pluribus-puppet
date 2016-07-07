@@ -13,8 +13,10 @@
 # limitations under the License.
 
 require File.expand_path(
-File.join(File.dirname(__FILE__),
-         '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
+    File.join(File.dirname(__FILE__),
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
@@ -25,23 +27,18 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
   commands :cli => 'cli'
 
-  #
-  # Chomps and strip!s output before returning it.
-  # @return: A string containing the requested information.
-  #
   def get_vrouter_info(format, name="#{resource[:name]}")
-    cli(@H.q, *@H.splat_switch, 'vrouter-show', 'name', name,
-        'format', format, 'no-show-headers').strip
+    cli(Q, *splat_switch, 'vrouter-show', 'name', name, 'format', format,
+        'no-show-headers').strip
   end
 
   def exists?
-    @H = PuppetX::Pluribus::PnHelper.new(resource)
     @BGP = (resource[:bgp_as] != '' and resource[:router_id] != 'none') ?
         true : false
-    unless cli('switch', resource[:switch], @H.q) == ''
+    unless cli(*splat_switch, Q) == ''
       fail("Switch #{resource[:switch]} could not be found on the fabric.")
     end
-    if cli('vnet-show', 'name', resource[:vnet], @H.q) == ''
+    if cli('vnet-show', 'name', resource[:vnet], Q) == ''
       fail("vNET #{resource[:vnet]} could not be found.")
     end
     if get_vrouter_info('name') != ''
@@ -51,12 +48,12 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def create
-    cli('--quiet', *@H.splat_switch, 'vrouter-create',
+    cli('--quiet', *splat_switch, 'vrouter-create',
         'name', resource[:name], 'vnet', resource[:vnet],
         'hw-vrrp-id', resource[:hw_vrrp_id],
         resource[:service])
     if @BGP
-      cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+      cli('--quiet', *splat_switch, 'vrouter-modify',
           'name', resource[:name], 'bgp-as', resource[:bgp_as],
           'router-id', resource[:router_id])
     elsif resource[:bgp_as] != '' and resource[:router_id] == 'none' or
@@ -66,7 +63,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def destroy
-    cli(*@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
+    cli(*splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
 
   def switch
@@ -99,8 +96,8 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def service=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-        'name', resource[:name], value)
+    cli(*splat_switch, 'vrouter-modify',
+        'name', resource[:name], value, Q)
   end
 
   def bgp_as
@@ -111,8 +108,8 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def bgp_as=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-        'name', resource[:name], 'bgp-as', value)
+    cli(*splat_switch, 'vrouter-modify',
+        'name', resource[:name], 'bgp-as', value, Q)
   end
 
   def router_id;
@@ -127,7 +124,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def router_id=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
+    cli('--quiet', *splat_switch, 'vrouter-modify',
         'name', resource[:name], 'router-id', value)
   end
 

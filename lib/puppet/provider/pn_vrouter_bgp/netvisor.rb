@@ -13,8 +13,10 @@
 # limitations under the License.
 
 require File.expand_path(
-File.join(File.dirname(__FILE__),
-         '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
+    File.join(File.dirname(__FILE__),
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
@@ -40,7 +42,7 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
   end
 
   def get_bgp_info(format, i)
-    out = cli('--quiet', *@H.splat_switch, 'vrouter-bgp-show',
+    out = cli(Q, *splat_switch, 'vrouter-bgp-show',
               'vrouter-name', @v, 'neighbor', i, 'format', format,
               'no-show-headers', 'parsable-delim', '%').split('%')
     if out[1]
@@ -50,11 +52,19 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
   end
 
   def exists?
-    @H = PuppetX::Pluribus::PnHelper.new(resource)
     @v, @i = resource[:name].split ' '
+
+    if cli(*splat_switch, 'vrouter-show', 'name', @v, Q) == ''
+      if resource[:ensure] == :present
+        fail("vRouter #{@v} does not exist")
+      else
+        return false
+      end
+    end
+
     decon_bgp_rng
     @range.each do |i|
-      if cli(@H.q, *@H.splat_switch, 'vrouter-bgp-show',
+      if cli(Q, *splat_switch, 'vrouter-bgp-show',
              'vrouter-name', @v, 'neighbor', i) == ''
         return false
       end
@@ -64,9 +74,9 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   def create
     @range.each do |i|
-      if cli(@H.q, *@H.splat_switch, 'vrouter-bgp-show',
+      if cli(Q, *splat_switch, 'vrouter-bgp-show',
              'vrouter-name', @v, 'neighbor', i) == ''
-        cli(@H.q, *@H.splat_switch, 'vrouter-bgp-add',
+        cli(Q, *splat_switch, 'vrouter-bgp-add',
             'vrouter-name', @v, 'neighbor', i, 'remote-as', resource[:bgp_as])
       end
     end
@@ -74,9 +84,9 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   def destroy
     @range.each do |i|
-      unless cli(@H.q, *@H.splat_switch, 'vrouter-bgp-show',
+      unless cli(Q, *splat_switch, 'vrouter-bgp-show',
              'vrouter-name', @v, 'neighbor', i) == ''
-        cli(@H.q, *@H.splat_switch, 'vrouter-bgp-remove', 'vrouter-name', @v,
+        cli(Q, *splat_switch, 'vrouter-bgp-remove', 'vrouter-name', @v,
             'neighbor', i)
       end
     end
@@ -97,7 +107,7 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   def bgp_as=(value)
     @range.each do |i|
-      cli(@H.q,  *@H.splat_switch, 'vrouter-bgp-modify', 'vrouter-name', @v,
+      cli(Q,  *splat_switch, 'vrouter-bgp-modify', 'vrouter-name', @v,
           'neighbor', i, 'remote-as', value)
     end
   end

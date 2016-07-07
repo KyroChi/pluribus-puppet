@@ -99,7 +99,7 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
       @H = PuppetX::Pluribus::PnHelper.new
       ids = @H.deconstruct_range(v.first)
       ids.each do |i|
-        unless i.to_i.between?(2, 4092)
+        unless (2..4092) === i.to_i #i.to_i.between?(2, 4092)
           raise ArgumentError, 'vLAN ID must be between 2 and 4092'
         end
       end
