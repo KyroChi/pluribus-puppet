@@ -15,7 +15,7 @@
 # SET-UP
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
@@ -29,13 +29,11 @@ pn_vlan { '101':
 # create an interface
 pn_vrouter_if { '101 x.x.x.3/24':
   ensure  => present,
-  vrouter => 'test-vrouter',
 }
 
 # should do nothing, already exists
 pn_vrouter_if { '101 x.x.x.3/24':
   ensure  => present,
-  vrouter => 'test-vrouter',
 }
 
 # should create a range
@@ -46,13 +44,11 @@ pn_vlan { '102-105':
 pn_vrouter_if { '102-105 x.x.x.3/24':
   require => Pn_vlan['102-105'],
   ensure  => present,
-  vrouter => 'test-vrouter',
 }
 
 # should do nothing
 pn_vrouter_if { '102-105 x.x.x.3/24':
   ensure  => present,
-  vrouter => 'test-vrouter',
 }
 
 # should delete range
@@ -63,19 +59,16 @@ pn_vlan { '102-105':
 pn_vrouter_if { '102-105 x.x.x.3/24':
   before  => Pn_vlan['102-105'],
   ensure  => absent,
-  vrouter => 'test-vrouter',
 }
 
 # should do nothing, already deleted
 pn_vrouter_if { '102-105 x.x.x.3/24':
   ensure  => absent,
-  vrouter => 'test-vrouter',
 }
 
 # create a vrrp interface
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -83,7 +76,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # should do nothing, already created
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -91,7 +83,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # delete a vrrp interface
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => absent,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -99,7 +90,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # should do nothing already deleted
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => absent,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -107,13 +97,11 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # should fail, incorrect namevar, no netmask
 pn_vrouter_if { '101 x.x.x.2':
   ensure  => present,
-  vrouter => test-vrouter,
 }
 
 # should fail, vrrp_ip matches interface ip
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.2/24',
   vrrp_priority => 110
 }
@@ -121,7 +109,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # should fail, vrouter doesn't exist
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter-fake,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -129,7 +116,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # create a vrrp interface
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -137,7 +123,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # change vrrp_id
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -145,13 +130,11 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # create an interface
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure  => present,
-  vrouter => 'test-vrouter',
 }
 
 # make it vrrp
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 110
 }
@@ -159,7 +142,6 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # change priority
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => 118
 }
@@ -167,16 +149,29 @@ pn_vrouter_if { '101 x.x.x.2/24':
 # change vrrp ip
 pn_vrouter_if { '101 x.x.x.2/24':
   ensure        => present,
-  vrouter       => test-vrouter,
   vrrp_ip       => 'x.x.x.4/24',
   vrrp_priority => 118
+}
+
+# should pass
+pn_vrouter { 'test-vrouter':
+  ensure     => absent,
+  switch     => 'charmander.pluribusnetworks.com',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+}
+
+pn_vrouter_if { '101 x.x.x.2/24':
+  ensure  => present,
+  require => Pn_vrouter['test-vrouter'],
 }
 
 
 # TEAR-DOWN
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
+  switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,

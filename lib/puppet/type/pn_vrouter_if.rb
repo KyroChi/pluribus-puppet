@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+    File.join(File.dirname(__FILE__),
+              '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
+
+
 Puppet::Type.newtype(:pn_vrouter_if) do
 
   @doc = "Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are
@@ -96,8 +103,7 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
       unless v.first =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/
         raise ArgumentError, 'vLAN ID must be a number or range of numbers'
       end
-      @H = PuppetX::Pluribus::PnHelper.new
-      ids = @H.deconstruct_range(v.first)
+      ids = deconstruct_range(v.first)
       ids.each do |i|
         unless (2..4092) === i.to_i #i.to_i.between?(2, 4092)
           raise ArgumentError, 'vLAN ID must be between 2 and 4092'
@@ -124,16 +130,6 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
     end
   end
 
-  newproperty(:vrouter) do
-    desc "The name of the vRouter that will host and manage the IP interface."
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'vRouter name can only contain letters, ' +
-            'numbers, _, ., :, and -'
-      end
-    end
-  end
-
   newproperty(:vrrp_ip) do
     desc "The ip of the VRRP interface."
     defaultto('none')
@@ -151,7 +147,7 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
     desc "The priority for the VRRP interface."
     defaultto('none')
     validate do |value|
-      unless value =~ /^(2[0-5][0-5]|1[0-9][0-9]|[0-9][0-9]|[0-9])$/ or
+      unless value.to_s =~ /^(2[0-5][0-5]|1[0-9][0-9]|[0-9][0-9]|[0-9])$/ or
           value == 'none'
         raise ArgumentError, 'vrrp_priority must be a number between 0 and 255'
       end

@@ -75,14 +75,12 @@ pn_vlan { '101-110, 198-202':
 pn_vrouter_if { '101-105 x.x.x.2/24':
   require => Pn_vlan['101-110, 198-202'],
   ensure  => present,
-  vrouter => 'a-vrouter',
   switch  => $a,
 }
 
 pn_vrouter_if { '106-110 x.x.x.2/24':
   require       => Pn_vlan['101-110, 198-202'],
   ensure        => present,
-  vrouter       => 'a-vrouter',
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => '110',
   switch        => $a,
@@ -91,14 +89,12 @@ pn_vrouter_if { '106-110 x.x.x.2/24':
 pn_vrouter_if { '101-105 x.x.x.4/24':
   require => Pn_vlan['101-110, 198-202'],
   ensure  => present,
-  vrouter => 'b-vrouter',
   switch  => $b,
 }
 
 pn_vrouter_if { '106-110 x.x.x.4/24':
   require       => Pn_vlan['101-110, 198-202'],
   ensure        => present,
-  vrouter       => 'b-vrouter',
   vrrp_ip       => 'x.x.x.3/24',
   vrrp_priority => '110',
   switch        => $b,

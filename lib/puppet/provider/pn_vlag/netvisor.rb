@@ -75,17 +75,33 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   end
 
   def create
-    cli('switch', @switch1, 'vlag-create',
-        'name', resource[:name],
-        'port', resource[:port],
-        'peer-port', resource[:peer_port],
-        'mode', "active-#{resource[:mode]}",
-        'peer-switch', @switch2,
-        "failover-#{resource[:failover]}-L2",
-        'lacp-mode', resource[:lacp_mode],
-        'lacp-timeout', resource[:lacp_timeout],
-        'lacp-fallback', resource[:lacp_fallback],
-        'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
+    # switch port and peer-port positions if try 1 errors, need to replace with
+    # something other than a try-catch
+    begin
+      cli('switch', @switch1, 'vlag-create',
+          'name', resource[:name],
+          'port', resource[:port],
+          'peer-port', resource[:peer_port],
+          'mode', "active-#{resource[:mode]}",
+          'peer-switch', @switch2,
+          "failover-#{resource[:failover]}-L2",
+          'lacp-mode', resource[:lacp_mode],
+          'lacp-timeout', resource[:lacp_timeout],
+          'lacp-fallback', resource[:lacp_fallback],
+          'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
+    rescue
+      cli('switch', @switch1, 'vlag-create',
+          'name', resource[:name],
+          'port', resource[:peer_port],
+          'peer-port', resource[:port],
+          'mode', "active-#{resource[:mode]}",
+          'peer-switch', @switch2,
+          "failover-#{resource[:failover]}-L2",
+          'lacp-mode', resource[:lacp_mode],
+          'lacp-timeout', resource[:lacp_timeout],
+          'lacp-fallback', resource[:lacp_fallback],
+          'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
+    end
   end
 
   mk_resource_methods
