@@ -106,6 +106,16 @@ module PuppetX
         ip_out
       end
 
+      # Returns the name of the current switch, use this if you need the actual
+      # location but there is a possibility that switch is defined as local.
+      # This is some really simple logic but I find myself using it a lot.
+      # @param defined: The switch name, defaults to resource[:switch]
+      # @return: A string containing the hostname of the system being managed
+      #
+      def switch_location(defined=resource[:switch])
+        defined == :local ? `hostname`.strip : defined
+      end
+
     end
 
   end

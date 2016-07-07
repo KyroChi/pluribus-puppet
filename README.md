@@ -337,7 +337,7 @@ pn_vlan { '101':
 ---
 ### pn_vrouter
 
-Manage vRouters.
+Manage vRouters. On systems that only allow one vRouter the latest executed vRouter deceleration will be created.
 
 #### Properties
 
@@ -444,7 +444,7 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.2-10':
 ---
 ### pn_vrouter_if
 
-Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a VRRP interface you must specify both `vrrp_ip` and `vrrp_priority`, otherwise and IP interface will be created. When you create a VRRP interface, pn_vrouter_if creates an IP interface AND a VRRP interface in one resource deceleration.
+Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a VRRP interface you must specify both `vrrp_ip` and `vrrp_priority`, otherwise and IP interface will be created. When you create a VRRP interface, pn_vrouter_if creates an IP interface AND a VRRP interface in one resource deceleration. If you don't create a vRouter prior to creating a vRouter interface the interface will make one. If you create a vRouter after a vRouter interface with a diffrent name the vRouter interface will be removed. Be careful and use Before and Require statements.
 
 #### Properties
 
