@@ -43,7 +43,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
 
   def exists?
 
-    location = resource[:switch] == :local ? `hostname`.strip : resource[:switch]
+    location = switch_location
 
     vrouter_locations = cli('vrouter-show', 'format',
                             'location', PDQ).split("\n")

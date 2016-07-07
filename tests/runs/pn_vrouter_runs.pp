@@ -220,8 +220,20 @@ pn_vrouter { 'test-vrouter':
   router_id  => '198.175.5.6',
 }
 
+# should pass and delete the old router and create the new one
+pn_vrouter { 'test-vrouter-overwrite':
+  ensure     => present,
+  switch     => 'charmander.pluribusnetworks.com',
+  vnet       => 'puppet-ansible-chef-fab-global',
+  service    => 'enable',
+  hw_vrrp_id => 18,
+  bgp_as     => 65000,
+  router_id  => '198.175.5.6',
+}
+
+
 # remove
-pn_vrouter { 'test-vrouter':
+pn_vrouter { 'test-vrouter-overwrite':
   ensure     => absent,
   switch     => 'charmander.pluribusnetworks.com',
   vnet       => 'puppet-ansible-chef-fab-global',

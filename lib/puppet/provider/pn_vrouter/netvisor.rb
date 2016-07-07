@@ -33,8 +33,17 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def exists?
+
     @BGP = (resource[:bgp_as] != '' and resource[:router_id] != 'none') ?
         true : false
+
+    vrouter = cli('vrouter-show', 'location', switch_location,
+                  'format', 'name', PDQ).strip
+    if vrouter != '' and vrouter != resource[:name]
+      cli('vrouter-delete', 'name', vrouter, Q)
+      return false
+    end
+
     unless cli(*splat_switch, Q) == ''
       fail("Switch #{resource[:switch]} could not be found on the fabric.")
     end
