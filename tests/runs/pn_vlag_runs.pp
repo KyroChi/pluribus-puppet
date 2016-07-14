@@ -12,41 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# START
-
-# should pass
-pn_vlag { 'charmander-squirtle-vlag':
+# SETUP
+pn_cluster { 'vlag-test-cluster':
   ensure => present,
-  cluster => 'tme-cluster',
-  port => 55,
-  peer_port => 55,
-  mode => active,
+  nodes  => [$SWITCH1, $SWITCH2]
 }
 
-# should pass, already created
-pn_vlag { 'charmander-squirtle-vlag':
+pn_lag { 'S1-lag':
   ensure => present,
-  cluster => 'tme-cluster',
-  port => 55,
-  peer_port => 55,
+  switch => $SWITCH1,
+  ports  => '11,12'
+}
+
+pn_lag { 'S2-lag':
+  ensure => present,
+  switch => $SWITCH2,
+  ports  => '13,14'
+}
+
+# PASS Bringing up a vLAG
+pn_vlag { 'S1-VLAG':
+  ensure => present,
+  cluster => 'vlag-test-cluster',
+  port => 'S1-lag',
+  peer_port => 'S2-lag',
   mode => active,
 }
 
-# should delete
-pn_vlag { 'charmander-squirtle-vlag':
+# PASS Taking a vLAG down
+pn_vlag { 'S1-VLAG':
   ensure => absent,
-  cluster => 'tme-cluster',
-  port => 55,
-  peer_port => 55,
+  cluster => 'vlag-test-cluster',
+  port => 'S1-lag',
+  peer_port => 'S2-lag',
   mode => active,
 }
 
-# should pass, already deleted
-pn_vlag { 'charmander-squirtle-vlag':
+# FAIL |idempotency=False| vLAG: Bad name
+pn_vlag { 'Bad name':
   ensure => absent,
-  cluster => 'tme-cluster',
-  port => 55,
-  peer_port => 55,
+  cluster => 'vlag-test-cluster',
+  port => 'S1-lag',
+  peer_port => 'S2-lag',
   mode => active,
 }
 

@@ -12,25 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$a = 'charmander.pluribusnetworks.com'
-$b = 'squirtle.pluribusnetworks.com'
+$SWITCH1 = 'charmander.pluribusnetworks.com'
+$SWITCH2 = 'squirtle.pluribusnetworks.com'
+
+# PASS |pre-clean=False, post-clean=False| tear down the two-switch demo
 
 pn_cluster { 'ab-cluster':
   ensure => absent,
-  nodes  => [$a, $b],
+  nodes  => [$SWITCH1, $SWITCH2],
 }
 
 pn_lag { 'a-lag':
   before  => Pn_cluster['ab-cluster'],
   ensure  => absent,
-  switch  => $a,
+  switch  => $SWITCH1,
   ports   => '11-14',
 }
 
 pn_lag { 'b-lag':
   before  => Pn_cluster['ab-cluster'],
   ensure  => absent,
-  switch  => $b,
+  switch  => $SWITCH2,
   ports   => '11-14',
 }
 
@@ -51,7 +53,7 @@ pn_vrouter { 'a-vrouter':
   service    => 'enable',
   bgp_as     => 65001,
   router_id  => '192.168.50.1',
-  switch     => $a,
+  switch     => $SWITCH1,
 }
 
 pn_vrouter { 'b-vrouter':
@@ -62,7 +64,7 @@ pn_vrouter { 'b-vrouter':
   service    => 'enable',
   bgp_as     => 65001,
   router_id  => '192.168.50.2',
-  switch     => $b,
+  switch     => $SWITCH2,
 }
 
 pn_vlan { '101-110, 198-202':
@@ -75,7 +77,7 @@ pn_vlan { '101-110, 198-202':
 pn_vrouter_if { '101-105 x.x.x.2/24':
   before  => Pn_vlan['101-110, 198-202'],
   ensure  => absent,
-  switch  => $a,
+  switch  => $SWITCH1,
 }
 
 pn_vrouter_if { '106-110 x.x.x.2/24':
@@ -83,13 +85,13 @@ pn_vrouter_if { '106-110 x.x.x.2/24':
   ensure        => absent,
   vrrp_ip       => 'x.x.x.1/24',
   vrrp_priority => '110',
-  switch        => $a,
+  switch        => $SWITCH1,
 }
 
 pn_vrouter_if { '101-105 x.x.x.4/24':
   before  => Pn_vlan['101-110, 198-202'],
   ensure  => absent,
-  switch  => $b,
+  switch  => $SWITCH2,
 }
 
 pn_vrouter_if { '106-110 x.x.x.4/24':
@@ -97,7 +99,7 @@ pn_vrouter_if { '106-110 x.x.x.4/24':
   ensure        => absent,
   vrrp_ip       => 'x.x.x.3/24',
   vrrp_priority => '110',
-  switch        => $b,
+  switch        => $SWITCH2,
 }
 
 pn_vrouter_bgp { 'a-vrouter 200.200.200.1':

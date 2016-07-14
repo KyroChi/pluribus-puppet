@@ -12,64 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# should pass
+# PASS create a new clusters
 pn_cluster { 'spine-cluster':
   ensure => present,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# should also pass
-pn_cluster { 'spine-cluster':
-  ensure => absent,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
-}
-
-# should pass
+# PASS |matchers=None| should change cluster name
 pn_cluster { 'spine-cluster-2':
   ensure => present,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# should change name
+# PASS should delete cluster
 pn_cluster { 'spine-cluster-2':
   ensure => absent,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# should pass
+# PASS create a cluster
 pn_cluster { 'spine-cluster':
   ensure => present,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# should do nothing, already declared
-pn_cluster { 'spine-cluster':
-  ensure => present,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
-}
-
-# should also pass
+# PASS delete cluster
 pn_cluster { 'spine-cluster':
   ensure => absent,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# should do nothing, already deleted
-pn_cluster { 'spine-cluster':
-  ensure => absent,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
-}
-
-# shouldn't pass
+# FAIL |idempotency=False| cluster with bad name
 pn_cluster { 'spine cluster':
   ensure => present,
-  nodes => ['dorado-tme-1', 'dorado-tme-2']
+  nodes => [$SWITCH1, $SWITCH2]
 }
 
-# shouldn't pass
+# FAIL |idempotency=False, matchers=None| cluster with fake switches
 pn_cluster { 'spine-cluster':
   ensure => present,
   nodes => ['dorado-tme-fake', 'dorado-tme-also-fake']
 }
-
-# END

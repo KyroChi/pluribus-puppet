@@ -16,62 +16,15 @@ import sys
 sys.path.append('../')
 from test_runs import TestRunner, Test
 
-SWITCH2 = 'squirtle.pluribusnetworks.com'
+def tests(runner):
+    runner.clean_setup()
+    runner.auto_gen_tests(path='../runs/pn_vlan_runs.pp')
+    runner.clean_setup()
 
-vlan_set_up_test = Test('vlan set up test')
-vlan_set_up_test.add_manifest_from_file(
-    '../../examples/pn_vlan/pn_vlan_set_up.pp'
-)
-
-vlan_tear_down_test = Test('vlan tear down test')
-vlan_tear_down_test.add_manifest_from_file(
-    '../../examples/pn_vlan/pn_vlan_tear_down.pp'
-)
-
-vlan_fail_test1 = Test('vlan bad name test', """pn_vlan { 'bad name':
-ensure => present,
-}""")
-vlan_fail_test2 = Test('vlan bad description test', """pn_vlan { '123':
-ensure => present, description => 'no spaces ', scope => local,
-}""")
-vlan_fail_test3 = Test('vlan bad description test', """pn_vlan { '123':
-ensure => present, description => '-', scope => farbrick,
-}""")
-vlan_fail_test4 = Test('vlan bad description test', """pn_vlan { '123':
-ensure => present, description => '-', scope => fabric, ports => 'letters',
-}""")
-
-test_runner = TestRunner([SWITCH2], debugging=False, logging=False,
-                         no_clean_on_entry=True)
-test_runner.clean_setup()
-
-test_runner.assert_exec_equals(
-    vlan_set_up_test,
-    'pn_vlan_set_up.pp manifest applies correctly',
-    test_runner.all_matchers(vlan_set_up_test))
-test_runner.assert_exec_equals(
-    vlan_set_up_test,
-    'pn_vlan_set_up idempotency',
-    test_runner.no_changes, explicit=True
-)
-
-
-test_runner.clean_setup()
-
-test_runner.assert_runs(vlan_set_up_test, 'pre tear down')
-test_runner.assert_exec_equals(
-    vlan_tear_down_test,
-    'pn_vlan_tear_down.pp manifest applies correctly',
-    test_runner.all_matchers(vlan_tear_down_test, 'removed'))
-test_runner.assert_exec_equals(
-    vlan_tear_down_test,
-    'pn_vlan_tear_down idempotency',
-    test_runner.no_changes, explicit=True
-)
-
-test_runner.assert_runs(vlan_fail_test1, 'vlan bad name', False)
-test_runner.assert_runs(vlan_fail_test2, 'vlan bad desc', False)
-test_runner.assert_runs(vlan_fail_test3, 'vlan bad scope', False)
-test_runner.assert_runs(vlan_fail_test4, 'vlan bad ports', False)
-
-test_runner.end_tests()
+if __name__ == "__main__":
+    SWITCH1 = 'charmander.pluribusnetworks.com'
+    SWITCH2 = 'squirtle.pluribusnetworks.com'
+    runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
+                    no_clean_on_entry=True)
+    tests(runner)
+    runner.end_tests()
