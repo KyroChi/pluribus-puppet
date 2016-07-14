@@ -16,19 +16,15 @@ import sys
 sys.path.append('../')
 from test_runs import TestRunner, Test
 
-def tests(runner):
+def tests_two_nodes(runner):
     runner.clean_setup()
-    runner.auto_gen_tests(
-        path='../../examples/demo_manifests/two_switch_demo_set_up.pp',
-        post_cleaning=False)
-    runner.auto_gen_tests(
-        path='../../examples/demo_manifests/two_switch_demo_tear_down.pp')
+    runner.auto_gen_tests(path='../runs/pn_vlag_runs.pp')
     runner.clean_setup()
 
 if __name__ == "__main__":
     SWITCH1 = 'charmander.pluribusnetworks.com'
     SWITCH2 = 'squirtle.pluribusnetworks.com'
     runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
-                    no_clean_on_entry=True, no_clean_on_exit=True)
-    tests(runner)
+                    no_clean_on_entry=True)
+    tests_two_nodes(runner)
     runner.end_tests()

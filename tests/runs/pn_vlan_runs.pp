@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# SET-UP
-
-# Create vlan 101
-# PASS
+# PASS create vlan 101
 pn_vlan { '101':
   ensure      => present,
   scope       => fabric,
@@ -23,17 +20,7 @@ pn_vlan { '101':
   ports       => 'none',
 }
 
-# Should do nothing
-# PASS
-pn_vlan { '101':
-  ensure      => present,
-  scope       => fabric,
-  description => 'desc',
-  ports       => 'none',
-}
-
-# delete vlan 101
-# PASS
+# PASS delete vlan 101
 pn_vlan { '101':
   ensure      => absent,
   scope       => fabric,
@@ -41,123 +28,80 @@ pn_vlan { '101':
   ports       => 'none',
 }
 
-# Should do nothing
-# PASS
-pn_vlan { '101':
-  ensure      => absent,
-  scope       => fabric,
-  description => 'desc',
-  ports       => 'none',
-}
-
-# Should create a range of vlans
-# PASS
+# PASS Should create a range of vlans
 pn_vlan { '101-110':
   ensure      => present,
   scope       => fabric,
   description => 'desc',
 }
 
-# Should do nothing
-# PASS
-pn_vlan { '101-110':
-  ensure      => present,
-  scope       => fabric,
-  description => 'desc',
-}
-
-# Should delete a range of vlans
-# PASS
+# PASS Should delete a range of vlans
 pn_vlan { '101-110':
   ensure      => absent,
   scope       => fabric,
   description => 'desc',
 }
 
-# Should do nothing
-# PASS
-pn_vlan { '101-110':
-  ensure      => absent,
-  scope       => fabric,
-  description => 'desc',
-}
-
-# Shouldn't compile
-# FAIL
+# FAIL |idempotency=False| Shouldn't compile
 pn_vlan { 'a, 65-98777 18-b4':
   ensure => absent,
 }
 
-# should compile
-# PASS
+# PASS should compile
 pn_vlan { '101':
   ensure => present,
-  scope  => 'Local'
+  scope  => 'local'
 }
 
-# should compile
-# PASS
-pn_vlan { '101':
-  ensure => present,
-  scope  => 'Fabric'
-}
-
-# shouldn't compile
-# FAIL
+# FAIL |idempotency=False| shouldn't compile
 pn_vlan { '101':
   ensure => present,
   scope  => 'lokal'
 }
 
-# shouldn't compile
-# FAIL
+# FAIL |idempotency=False| shouldn't compile
 pn_vlan { '101':
   ensure => present,
   scope  => 'fabrik'
 }
 
-# Overlapping Tests
-# PASS
+# PASS Overlapping Tests
 pn_vlan { '101-103':
   ensure => present,
   scope  => fabric,
 }
 
-# PASS
+# PASS overlapping
 pn_vlan { '101-110':
   ensure => present,
   scope  => fabric,
 }
 
-# PASS
+# PASS more overlapping
 pn_vlan { '108-115':
   ensure => present,
   scope  => fabric,
 }
 
-# Overlapping Tests Over
-# PASS
+# PASS Overlapping Tests Over
 pn_vlan { '101-103':
   ensure => absent,
   scope  => fabric,
 }
 
-# PASS
+# PASS remove more overlaps
 pn_vlan { '101-110':
   ensure => absent,
   scope  => fabric,
 }
 
-# PASS
+# PASS remove even more overlaps
 pn_vlan { '108-115':
   ensure => absent,
   scope  => fabric,
 }
 
-# TEAR-DOWN
-
-# Test a vlan gets deleted if its part of an interface
-# SETUP
+# PASS |pre-clean=True| Test a vlan gets deleted if its part of an interface
 pn_vlan { '103':
   ensure => present,
   scope => fabric,
@@ -173,31 +117,9 @@ pn_vrouter { 'test-vrouter':
 pn_vrouter_if { '103 x.x.x.2/24':
   require => Pn_vrouter['test-vrouter'],
   ensure => present,
-  vrouter => 'test-vrouter',
 }
 
-# Make sure it is deleted
+# PASS Make sure it is deleted
 pn_vlan { '103':
   ensure => absent,
 }
-
-# TEAR-DOWN
-pn_vlan { '103':
-  ensure => absent,
-  scope => fabric,
-}
-
-pn_vrouter { 'test-vrouter':
-  before => Pn_vlan['103'],
-  ensure => absent,
-  vnet => 'puppet-ansible-chef-fab-global',
-  hw_vrrp_id => 18,
-}
-
-pn_vrouter_if { '103 x.x.x.2/24':
-  require => Pn_vrouter['test-vrouter'],
-  ensure => absent,
-  vrouter => 'test-vrouter',
-}
-
-# END

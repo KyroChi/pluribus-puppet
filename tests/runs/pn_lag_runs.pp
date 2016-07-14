@@ -12,97 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# START
+# SETUP
+pn_cluster { 'char-squirt-cluster':
+    ensure => present,
+    nodes  => [$SWITCH1, $SWITCH2]
+}
 
-# Setup
-
-# Should pass, create new trunk
+# PASS create new trunk
 pn_lag { 'charmander-trunk':
   ensure => present,
-  switch => 'charmander.pluribusnetworks.com',
+  switch => $SWITCH1,
   ports => '11-14'
 }
 
-# Should pass, already created
-pn_lag { 'charmander-trunk':
-  ensure => present,
-  switch => 'charmander.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-# shoud pass, delete trunk
+# PASS delete trunk
 pn_lag { 'charmander-trunk':
   ensure => absent,
-  switch => 'charmander.pluribusnetworks.com',
+  switch => $SWITCH1,
   ports => '11-14'
 }
 
-# shoud pass, already deleted
-pn_lag { 'charmander-trunk':
-  ensure => absent,
-  switch => 'charmander.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-# Should pass, create new trunks
+# PASS create new trunks
 pn_lag { 'charmander-trunk':
   ensure => present,
-  switch => 'charmander.pluribusnetworks.com',
+  switch => $SWITCH1,
   ports => '11-14'
 }
 
 pn_lag { 'squirtle-trunk':
   ensure => present,
-  switch => 'squirtle.pluribusnetworks.com',
+  switch => $SWITCH2,
   ports => '11-14'
 }
 
-# Should pass, already created
-pn_lag { 'charmander-trunk':
-  ensure => present,
-  switch => 'charmander.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-pn_lag { 'squirtle-trunk':
-  ensure => present,
-  switch => 'squirtle.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-# change ports, should pass
-pn_lag { 'charmander-trunk':
-  ensure => present,
-  switch => 'charmander.pluribusnetworks.com',
-  ports => '11-15'
-}
-
-# shoud pass, delete trunk
+# PASS delete trunks
 pn_lag { 'charmander-trunk':
   ensure => absent,
-  switch => 'charmander.pluribusnetworks.com',
+  switch => $SWITCH1,
   ports => '11-14'
 }
 
 pn_lag { 'squirtle-trunk':
   ensure => absent,
-  switch => 'squirtle.pluribusnetworks.com',
+  switch => $SWITCH2,
   ports => '11-14'
 }
-
-# shoud pass, already deleted
-pn_lag { 'charmander-trunk':
-  ensure => absent,
-  switch => 'charmander.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-pn_lag { 'squirtle-trunk':
-  ensure => absent,
-  switch => 'squirtle.pluribusnetworks.com',
-  ports => '11-14'
-}
-
-# Teardown
-
-#END

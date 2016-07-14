@@ -14,22 +14,12 @@
 
 import sys
 sys.path.append('../')
-from test_runs import TestRunner as tr, Test
+from test_runs import TestRunner, Test
 
-import cluster_tests
-import lag_tests
-import vlan_tests
-import vlag_tests
-import two_switch_demo_test
-
-def tests(runner):
-    cluster_tests.tests_two_nodes(runner)
-    lag_tests.tests_two_nodes(runner)
-    vlan_tests.tests(runner)
-    vlag_tests.tests_two_nodes(runner)
-    two_switch_demo_test.tests(runner)
-
-# Run these before you push changes :)
+def tests_two_nodes(runner):
+    runner.clean_setup()
+    runner.auto_gen_tests(path='../runs/pn_cluster_runs.pp')
+    runner.clean_setup()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == '4':
@@ -45,7 +35,7 @@ if __name__ == "__main__":
     else:
         SWITCH1 = 'charmander.pluribusnetworks.com'
         SWITCH2 = 'squirtle.pluribusnetworks.com'
-        runner = tr([SWITCH1, SWITCH2], debugging=False, logging=False,
+        runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
                         no_clean_on_entry=True)
-        tests(runner)
+        tests_two_nodes(runner)
         runner.end_tests()
