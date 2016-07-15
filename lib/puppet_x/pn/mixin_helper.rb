@@ -113,7 +113,7 @@ module PuppetX
       # @return: A string containing the hostname of the system being managed
       #
       def switch_location(defined=resource[:switch])
-        defined == :local ? `hostname`.strip : defined
+        (defined == :local or defined == 'local') ? `hostname`.strip : defined
       end
 
     end

@@ -57,6 +57,18 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
             'ports', resource[:ports], 'description', resource[:description])
       end
     end
+    if self.ports != resource[:ports]
+      self.ports=(resource[:ports])
+    end
+    if self.scope != resource[:scope]
+      self.scope=(resource[:scope])
+    end
+    if self.description != resource[:description]
+      self.description=(resource[:description])
+    end
+    if self.untagged_ports != resource[:untagged_ports]
+      self.untagged_ports = resource[:untagged_ports]
+    end
   end
 
   def destroy
