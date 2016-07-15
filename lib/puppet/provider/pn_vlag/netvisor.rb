@@ -115,6 +115,22 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
     create
   end
 
+  def port
+    if @property_hash[:port] == resource[:port] or
+        (@property_hash[:peer_port] == resource[:port] and
+            @property_hash[:port] == resource[:peer_port])
+      return resource[:port]
+    end
+  end
+
+  def peer_port
+    if @property_hash[:peer_port] == resource[:peer_port] or
+        (@property_hash[:peer_port] == resource[:port] and
+            @property_hash[:port] == resource[:peer_port])
+      return resource[:peer_port]
+    end
+  end
+
   def port=(value)
     destroy
     create

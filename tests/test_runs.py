@@ -16,6 +16,7 @@ import re
 import sys
 import time
 import string
+import argparse
 import datetime
 import threading
 import itertools
@@ -50,6 +51,24 @@ class TestRunner:
 
     For a full guide on this framework look under 'doc/developers.md#testing'
 
+    The TestRunner adds command line arguments to any file using a TestRunner.
+    Any option specified on the command line will overwrite the value specified
+    in the test file.
+
+        usage: test-name.py [-h] [-d] [-D] [-l] [-k] [-x] [-e]
+
+        optional arguments:
+            -h, --help            show this help message and exit
+            -d, --debugging       enable debugging
+            -D, --detailed-debugging
+                                    enable detailed debugging
+          -l, --logging         enable logging
+          -k, --keep-run        keep the run.pp file after exit
+          -x, --no-clean-on-exit
+                                turn off test exit cleaning
+          -e, --no-clean-on-entry
+                                turn off test entry cleaning
+
     I didn't want to use RSpec-Puppet because it doesn't check state or proper
     execution, only that the manifest compiles. I could RUnit the types and
     providers myself... except that I would have to write a framework that
@@ -67,7 +86,8 @@ class TestRunner:
     """
     def __init__(self, switches, debugging=False, logging=True,
                  no_clean_on_exit=False, no_clean_on_entry=False,
-                 keep_run=False, command_line_args=None):
+                 keep_run=False, command_line_args=None,
+                 detailed_debugging=False):
         """
         :param switches: An array of switches to be handled by the TestRunner.
 
@@ -96,17 +116,61 @@ class TestRunner:
         self.WHITE = '\033[37m'
         self.CLEAR = '\033[0m'
 
-        self._assertions = 0
-        self._failures = 0
-        self._warnings = 0
-        self._passes = 0
-
         self.debugger = debugging
+        self.detailed_debugging = detailed_debugging
         self.logging = logging
         self.no_clean_on_exit = no_clean_on_exit
         self.no_clean_on_entry = no_clean_on_entry
         self.keep_run = keep_run
         self.switches = switches
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-d', '--debugging',
+                            help="enable debugging", action="store_true")
+        parser.add_argument('-D', '--detailed-debugging',
+                            help="enable detailed debugging",
+                            action="store_true")
+        parser.add_argument('-l', '--logging',
+                            help="enable logging", action="store_true")
+        parser.add_argument('-k', '--keep-run',
+                            help="keep the run.pp file after exit",
+                            action="store_true")
+        parser.add_argument('-x', '--no-clean-on-exit',
+                            help="turn off test exit cleaning",
+                            action="store_true")
+        parser.add_argument('-e', '--no-clean-on-entry',
+                            help="turn off test entry cleaning",
+                            action="store_true")
+        args = parser.parse_args()
+
+        if args.debugging:
+            if not self.debugger:
+                self.debugger = not self.debugger
+
+        if args.detailed_debugging:
+            if not self.detailed_debugging:
+                self.detailed_debugging = not self.detailed_debugging
+
+        if args.logging:
+            if not self.logging:
+                self.logging = not self.logging
+
+        if args.keep_run:
+            if not self.keep_run:
+                self.keep_run = not self.keep_run
+
+        if args.no_clean_on_exit:
+            if not self.no_clean_on_exit:
+                self.no_clean_on_exit = not self.no_clean_on_exit
+
+        if args.no_clean_on_entry:
+            if not self.no_clean_on_entry:
+                self.no_clean_on_entry = not self.no_clean_on_entry
+
+        self._assertions = 0
+        self._failures = 0
+        self._warnings = 0
+        self._passes = 0
 
         if self.logging:
             self.log_init()
@@ -303,7 +367,7 @@ class TestRunner:
 
         :return: The current time as a string.
         """
-        return datetime.datetime.now().time()
+        return datetime.datetime.now()
 
     def log_init(self):
         """
@@ -462,7 +526,7 @@ class TestRunner:
 
         :return: ---
         """
-        print color + "[%s] " % self.time() + message + self.CLEAR
+        print color + "[%s] " % self.time().time() + message + self.CLEAR
 
     def message(self, type, content):
         """
@@ -500,7 +564,7 @@ class TestRunner:
         self.log(content)
 
     def detailed_diagnostics(self, name, expectation, reality, time, error,
-                             exit, metadata, manifest):
+                             exit, output, metadata, manifest, command):
         """
         :param name:
         :param expectation:
@@ -515,31 +579,37 @@ class TestRunner:
         string ="----------------------------------------------------------" + \
         """-----------------------
 
-    Assertion: '%s':
+Assertion: '%s' took %s seconds to run
 
-    %s
-    %s
-    Test took %s seconds to run
+Executed command: %s
 
-    Error: %s
-    Exit: %s
+Expected to pass: %s
+Test passed:      %s
 
-    Metadata:
-        manifest location:
-            %s
-        manifest dict:
-            %s
-        options array:
-            %s
+Output:
+%s
+Error:
+%s
+Exit: %s
 
-    Manifest:
+Metadata:
+    manifest location:
+        %s
+    manifest dict:
+        %s
+    options array:
         %s
 
-        """ + \
+Manifest:
+    %s
+
+""" % (name, time, command, expectation, reality, output, error, exit,
+        '', '', '', manifest) + \
         "------------------------------------------------------------------" + \
         "--------------"
 
-        return string
+        if self.detailed_debugging:
+            print string
 
     def debug_variables(self, v, e, ex, cmd):
         """
@@ -801,6 +871,9 @@ class TestRunner:
 
         :return: ---
         """
+        start = self.time()
+        actual = False
+
         if pre_conditions:
             self.exec_conditions(pre_conditions)
 
@@ -816,11 +889,17 @@ class TestRunner:
                 else self.assertion_summary(name, 'pass')
         else:
             self.message('debug', "assert_runs: pass")
+            actual = True
             self.assertion_summary(name, 'pass') if expect \
                 else self.assertion_summary(name, 'fail', e)
 
         if post_conditions:
             self.exec_conditions(post_conditions)
+
+        end = self.time() - start
+
+        self.detailed_diagnostics(name, expect, actual, end, e, ex, v, '',
+                                  manifest, cmd)
 
     def assert_exec_equals(self, manifest, name, assertions, expect=True,
                            strict=False, explicit=False, pre_conditions=None,
@@ -862,6 +941,9 @@ class TestRunner:
 
         :return: ---
         """
+        start = self.time()
+        actual = False
+
         if pre_conditions:
             if self.exec_conditions(pre_conditions):
                 self.assertion_summary(name, 'fail', "Pre-conditions failed")
@@ -901,6 +983,7 @@ class TestRunner:
         elif (len(matcher.findall(v)) == len(assertions)) or \
                 (strict and len(matcher.findall(v)) == 1):
             self.message('debug', "assert_exec_equals: pass")
+            actual = True
             self.assertion_summary(name, 'pass') if expect \
                 else self.assertion_summary(name, 'fail', v +
                                             "\n matches:\n%s" %
@@ -915,20 +998,26 @@ class TestRunner:
         if post_conditions:
             self.exec_conditions(post_conditions)
 
-    # def assert_state_equals(self, manifest, assertion):
-    #     """
-    #     Assert that the execution of the manifest changed the state
-    #     runner.assert_state_equals(test, 'vlan 101 present')
-    #
-    #     :param manifest: A test object.
-    #
-    #     :param assertion: The assertable state. Present or absent
-    #
-    #     :return: ---
-    #     """
-    #     x = self._failures
-    #     x = manifest
-    #     # TODO IMPLEMENT THIS METHOD
+        end = self.time() - start
+
+        self.detailed_diagnostics(name, expect, actual, end, e, ex, v, '',
+                                  manifest, cmd)
+
+    def assert_state_equals(self, manifest, assertion, expect=True):
+        """
+        Assert that the execution of the manifest changed the state
+        runner.assert_state_equals(test, 'vlan 101 present')
+
+        :param manifest: A test object.
+
+        :param assertion: The assertable state. Present or absent
+
+        :return: ---
+        """
+
+        # TODO IMPLEMENT THIS METHOD
+
+        pass
 
     def auto_gen_tests(self, manifests_dict=None, path=None, idempotency=True,
                        preconditions=None, postconditions=None,

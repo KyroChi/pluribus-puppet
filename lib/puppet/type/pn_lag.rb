@@ -113,7 +113,7 @@ node your-pluribus-switch {
     defaultto('none')
     validate do |value|
       unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/ \
-      or 'none'
+      or :none
         raise ArgumentError, 'Ports must be a number or range of numbers'
       end
     end
