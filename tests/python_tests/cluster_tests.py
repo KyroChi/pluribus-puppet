@@ -22,20 +22,10 @@ def tests_two_nodes(runner):
     runner.clean_setup()
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == '4':
-        SWITCH1 = ''
-        SWITCH2 = ''
-        SWITCH3 = ''
-        SWITCH4 = ''
-        runner = TestRunner([SWITCH1, SWITCH2, SWITCH3, SWITCH4],
-                            debugging=True, logging=False,
-                            no_clean_on_entry=True)
-        tests_four_nodes(runner)
-        runner.end_tests()
-    else:
-        SWITCH1 = 'charmander.pluribusnetworks.com'
-        SWITCH2 = 'squirtle.pluribusnetworks.com'
-        runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
-                        no_clean_on_entry=True)
-        tests_two_nodes(runner)
-        runner.end_tests()
+
+    SWITCH1 = 'charmander.pluribusnetworks.com'
+    SWITCH2 = 'squirtle.pluribusnetworks.com'
+    runner = TestRunner([SWITCH1, SWITCH2], debugging=False, logging=False,
+                    no_clean_on_entry=True)
+    tests_two_nodes(runner)
+    runner.end_tests()
