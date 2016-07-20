@@ -446,11 +446,11 @@ Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a 
 
 #### Properties
 
-**`name`** is the id of the vLan that the vRouter interface will live on. The name consists of a comma or whitespace seperated list of vLANs, followed by an IP pattern including netmask. The IP follows pattern matching.
+**`name`** is the id of the vLan that the vRouter interface will live on,followed by an IP.
 
 **`ensure`** tells Puppet how to manage the vRouter interface. Ensuring `present` will mean that the vRouter interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vRouter interface is not present on the system after the catalog run.
 
-**_`vrrp_ip`_** is the ip of the VRRP interface. This also obeys IP pattern matching, and the only criteria is that this ip cannot be the same as the IP of the IP interface. Default is `none`.
+**_`vrrp_ip`_** is the ip of the VRRP interface. Cannot be the same as the IP of the IP interface. Must have a netmask. Default is `none`.
 
 **_`vrrp_priority`_** The VRRP interface priority, this can be a number between `0` and `255`. Default is `none`.
 
@@ -478,13 +478,13 @@ pn_vrouter { 'demo-vrouter':
     service    => enable,
 }
 
-pn_vlan { '101-102':
+pn_vlan { '101':
     require     => Pn_vrouter['demo-vrouter'],
     ensure      => present,
     scope       => 'fabric',
 }
 
-pn_vrouter_if { '101-102 x.x.x.2/24':
+pn_vrouter_if { '101 101.101.101.2/24':
     require       => Pn_vlan['101'],
     ensure        => present,
     vrrp_ip       => 'x.x.x.1',

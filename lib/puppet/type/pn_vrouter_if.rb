@@ -29,9 +29,8 @@ deceleration.
 
 Properties
 
-name is the id of the vLan that the vRouter interface will live on. The name
-consists of a comma or whitespace seperated list of vLANs, followed by an IP
-pattern including netmask. The IP follows pattern matching.
+name is the id of the vLan that the vRouter interface will live on,followed by
+an IP pattern including netmask.
 
 ensure tells Puppet how to manage the vRouter interface. Ensuring present will
 mean that the vRouter interface will be created and present on the switch after
@@ -40,9 +39,7 @@ interface is not present on the system after the catalog run.
 
 vrouter is the name of the vRouter that will host and manage the interface.
 
-vrrp_ip is the ip of the VRRP interface. This also obeys IP pattern matching,
-and the only criteria is that this ip cannot be the same as the IP of the IP
-interface. Default is none.
+vrrp_ip is the ip of the VRRP interface. Must include netmask. Default is none.
 
 vrrp_priority The VRRP interface priority, this can be a number between 0 and
 255. Default is none.
@@ -100,8 +97,8 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
     desc "The id of the vLan that the vRouter interface will live on."
     validate do |value|
       v = value.rpartition(' ')
-      unless v.first =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/
-        raise ArgumentError, 'vLAN ID must be a number or range of numbers'
+      unless v.first =~ /^\d{1,4}$/
+        raise ArgumentError, 'vLAN ID must be a number'
       end
       ids = deconstruct_range(v.first)
       ids.each do |i|
@@ -110,10 +107,9 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
         end
       end
       # Regex to check ips, check Rubular.com if you don't believe me
-      unless v.last =~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[x])\.)
+      unless v.last =~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
 {3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/\d{1,2})$/
-        raise ArgumentError, 'IP must be an actual IP or follow a correct ip ' +
-            'pattern. Must also include a netmask'
+        raise ArgumentError, 'IP must be an actual IP, must also include a netmask'
       end
       @ip = v.last
     end
@@ -135,10 +131,9 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
     defaultto('none')
     # The second ip for the interface
     validate do |value|
-      if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[x])\.)
+      if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9])\.)
 {3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/\d{1,2})$/ and value != 'none'
-        raise ArgumentError, 'VRRP IP must be an actual IP or follow a ' +
-            'correct ip pattern. Must also include a netmask'
+        raise ArgumentError, 'VRRP IP must be an actual IP, must also include a netmask'
       end
     end
   end
