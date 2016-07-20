@@ -26,76 +26,72 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
       info = cli(Q, 'vlan-show', 'id', id, 'format', format,
                  'no-show-headers').split("\n")
     if info[0]
-      info[0].strip!
+      return info[0].strip
+    end
+    return nil
+  end
+
+  def self.instances
+    get_vlans.collect do |vlan|
+      vlan_props = get_vlan_props(vlan)
+      new(vlan_props)
+    end
+  end
+
+  def self.get_vlans
+    cli(*splat_switch('local'), 'vlan-show', 'format',
+        'id,scope,description,ports,untagged-ports,stats', PDQ).split("\n")
+  end
+
+  def self.get_vlan_props(vlan)
+    vlan_props = {}
+    vlan = vlan.split('%')
+    vlan_props[:ensure]         = :present
+    vlan_props[:provipder]      = :netvisor
+    vlan_props[:name]           = vlan[0]
+    vlan_props[:scope]          = vlan[1]
+    vlan_props[:description]    = vlan[2]
+    vlan_props[:ports]          = vlan[3]
+    vlan_props[:untagged_ports] = vlan[4]
+    vlan_props[:stats]          = vlan[5]
+    vlan_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
+      end
     end
   end
 
   def exists?
-    @ids = deconstruct_range(resource[:name])
-    for id in @ids do
-      if get_vlan_info(id, 'id')
-        if resource[:ensure] == :absent
-          return true
-        end
-      else
-        if resource[:ensure] == :present
-          return false
-        end
-      end
-    end
-    if resource[:ensure] == :present
-      true
-    else
-      false
-    end
+    @property_hash[:ensure] == :present
   end
 
   def create
-    for id in @ids do
-      unless get_vlan_info(id, 'id')
-        cli(*splat_switch, 'vlan-create', 'id', id, 'scope', resource[:scope],
-            'ports', resource[:ports], 'description', resource[:description])
-      end
-    end
-    if self.ports != resource[:ports]
-      self.ports=(resource[:ports])
-    end
-    if self.scope != resource[:scope]
-      self.scope=(resource[:scope])
-    end
-    if self.description != resource[:description]
-      self.description=(resource[:description])
-    end
-    if self.untagged_ports != resource[:untagged_ports]
-      self.untagged_ports = resource[:untagged_ports]
-    end
+    cli(*splat_switch, 'vlan-create', 'id', resource[:name], 'scope',
+        resource[:scope], 'ports', resource[:ports], 'description',
+        resource[:description])
   end
 
   def destroy
-    for id in @ids do
-      if get_vlan_info(id, 'id')
-        switch = get_vlan_info(id, 'switch')
-        begin
-          cli(*splat_switch(switch), 'vlan-delete', 'id', id)
-        rescue => detail
-          if detail =~ /router interface/
-            nic = cli(*splat_switch(switch), 'vrouter-interface-show', 'vlan',
-                      id, 'format', 'nic', PDQ).split '%'
-            cli(*splat_switch(switch), 'vrouter-interface-remove',
-                'vrouter-name', nic[0], 'nic', nic[1].strip)
-          end
-        end
+    if get_vlan_info(resource[:name], 'id')
+      switch = get_vlan_info(resource[:name], 'switch')
+      nic = cli('vrouter-interface-show', 'vlan',
+                resource[:name], 'format', 'nic', PDQ).split('%')
+      if nic[1]
+        puts cli('vrouter-interface-remove',
+                 'vrouter-name', nic[0], 'nic', nic[1].strip)
+        cli('vrouter-interface-remove',
+            'vrouter-name', nic[0], 'nic', nic[1].strip)
       end
+      cli(*splat_switch(switch), 'vlan-delete', 'id', resource[:name])
     end
   end
 
   def scope
-    for id in @ids do
-      if get_vlan_info(id, 'scope') != resource[:scope].to_s
-        return "Incorrect Scope"
-      end
-    end
-    resource[:scope]
+    @property_hash[:scope]
   end
 
   def scope=(value)
@@ -104,50 +100,32 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   end
 
   def description
-    for id in @ids do
-      if get_vlan_info(id, 'description') != resource[:description]
-        return "Incorrect Description"
-      end
-    end
-    resource[:description]
+    @property_hash[:description]
   end
 
   def description=(value)
-    for id in @ids do
-      if get_vlan_info(id, 'switch') != resource[:switch]
-        cli(*splat_switch(get_vlan_info(id, 'switch')), 'vlan-modify',
-            'id', id, 'description', value)
-      else
-        cli(*splat_switch, 'vlan-modify', 'id', id, 'description', value)
-      end
-    end
-  end
-
-  def stats
-    if get_vlan_info(@ids[0], 'stats') == 'yes'
-      :enable
+    if get_vlan_info(resource[:name], 'switch') != resource[:switch]
+      cli(*splat_switch(get_vlan_info(resource[:name], 'switch')), 'vlan-modify',
+          'id', resource[:name], 'description', value)
     else
-      :disable
+      cli(*splat_switch, 'vlan-modify', 'id', resource[:name], 'description',
+          value)
     end
-  end
-
-  def stats=(value)
-    cli('--quiet', 'vlan-stats-settings-modify', value)
   end
 
   def ports
-    for id in @ids do
-      if get_vlan_info(id, 'ports') == '0'
-        if resource[:ports] != 'none'
-          return "Incorrect Ports"
-        end
-      else
-        if get_vlan_info(id, 'ports') != resource[:ports]
-          return "Incorrect Ports"
-        end
+    actual_ports = @property_hash[:ports]
+    if actual_ports == '0'
+      if resource[:ports] == 'none'
+        return resource[:ports]
+      end
+    else
+      if actual_ports == resource[:ports] or
+        "0,#{resource[:ports]}" == actual_ports
+        return resource[:ports]
       end
     end
-    resource[:ports]
+    actual_ports
   end
 
   def ports=(value)
@@ -156,19 +134,18 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   end
 
   def untagged_ports
-    for id in @ids do
-      u_ports = get_vlan_info(id, 'untagged-ports')
-      if u_ports == 'none' or u_ports == ''
-        if resource[:untagged_ports] != :none
-          "Incorrect Untagged Ports"
-        end
-      else
-        if resource[:untagged_ports] != u_ports
-          "Incorrect Untagged Ports"
-        end
+    u_ports = @property_hash[:untagged_ports]
+    if u_ports == 'none' or u_ports == ''
+      if resource[:untagged_ports] == :none
+        return resource[:untagged_ports]
+      end
+    else
+      if resource[:untagged_ports] == u_ports or
+        "0, #{resource[:untagged_ports]}" == uports
+        return resource[:untagged_ports]
       end
     end
-    resource[:untagged_ports]
+    u_ports
   end
 
   def untagged_ports=(value)

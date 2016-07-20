@@ -24,8 +24,7 @@ Puppet::Type.newtype(:pn_vlan) do
 
 Properties
 
-id is the vLAN id, this can be any number between 2 and 4092. Comma separated or
-whitespace separated is allowed. Ranges are allowed.
+id is the vLAN id, this can be any number between 2 and 4092.
 
 ensure tells Puppet how to manage the vLAN. Ensuring present will mean that the
 vLAN will be created and present on the switch after a completed catalog run.
@@ -36,9 +35,6 @@ scope is the name of the vNET assigned to the vRouter.
 
 description is the description of the vLAN. Can only contain letters, numbers,
 _, ., :, and -. The default value is ''.
-
-stats enables or disables vLAN statistics. This can either be enable or disable.
-The default value is enable.
 
 ports is a comma separated list of ports that the vLAN will use. There cannot be
 any whitespace separating the ports, ranges are allowed. The default value is
@@ -74,15 +70,11 @@ pn_vlan { '101':
     desc "The id of the vLAN to be managed."
     isnamevar
     validate do |value|
-      # Regex matches '5, 67-89, 100-101, 4091-4092' and '56-87 8' and '10'
-      unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/
-        raise ArgumentError, 'ID must be a number or range of numbers'
+      if value !~ /\d*/
+        raise ArgumentError, 'ID must be a number'
       end
-      ids = deconstruct_range(value)
-      ids.each do |i|
-        unless i.to_i.between?(2, 4092)
-          raise ArgumentError, 'ID must be between 2 and 4092'
-        end
+      unless value.to_i.between?(2, 4092)
+        raise ArgumentError, 'ID must be between 2 and 4092'
       end
     end
   end
@@ -101,12 +93,6 @@ pn_vlan { '101':
             '_, ., :, and -'
       end
     end
-  end
-
-  newproperty(:stats) do
-    desc 'Enable or disable vlan statistics'
-    defaultto(:enable)
-    newvalues(:enable, :disable)
   end
 
   newproperty(:ports) do
