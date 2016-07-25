@@ -5,3 +5,4 @@
 Rakefile
 Gemfile.lock
 *.pyc
+.DS_Store
