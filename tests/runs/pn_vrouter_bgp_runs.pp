@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# SET-UP
+# SETUP
+
+$vnet = 'puppet-ansible-fab-global'
 
 pn_vrouter { 'bgp-test-vrouter-1':
   ensure     => present,
-  switch     => 'dorado-tme-1',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => $vnet,
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -27,13 +29,13 @@ pn_vrouter { 'bgp-test-vrouter-1':
 pn_vrouter_loopback { 'bgp-test-vrouter-1 172.16.1.1':
   require => Pn_vrouter['bgp-test-vrouter-1'],
   ensure => present,
-  switch => 'dorado-tme-1',
+  switch => $switch1,
 }
 
 pn_vrouter { 'bgp-test-vrouter-2':
   ensure     => present,
-  switch     => 'dorado-tme-2',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $SWITCH2,
+  vnet       => $vnet,
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -43,115 +45,65 @@ pn_vrouter { 'bgp-test-vrouter-2':
 pn_vrouter_loopback { 'bgp-test-vrouter-2 172.16.1.2':
   require => Pn_vrouter['bgp-test-vrouter-2'],
   ensure => present,
-  switch => 'dorado-tme-2',
+  switch => $SWITCH2,
 }
 
-# create a BGP on switch 1
+# PASS |pre-clean=False, post-clean=False| Create BGP interface on switch1
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6':
   ensure => present,
   bgp_as => 65000,
 }
 
-# do nothing already created
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6':
-  ensure => present,
-  bgp_as => 65000,
-}
-
-# create a BGP on switch 2
+# PASS |pre-clean=False, post-clean=False| Create BGP interface on SWITCH2
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
   ensure => present,
   bgp_as => 65000,
 }
 
-# do nothing already created
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
-  ensure => present,
-  bgp_as => 65000,
-}
-
-# remove bgp on switch1
+# PASS |pre-clean=False, post-clean=False| Remove BGP interface from switch1
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6':
   ensure => absent,
   bgp_as => 65000,
 }
 
-# do nothing already removed
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6':
-  ensure => absent,
-  bgp_as => 65000,
-}
-
-# remove BGP from switch 2
+# PASS |pre-clean=False, post-clean=False| Remove BGP interface from SWITCH2
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
   ensure => absent,
   bgp_as => 65000,
 }
 
-# do nothing already removed
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
-  ensure => absent,
-  bgp_as => 65000,
-}
-
-# should fail, bad name
+# FAIL |idempotency=False, setup=False| BGP interface has bad name
 pn_vrouter_bgp { 'bgp test vrouter 1 172.168.10.10':
   ensure => present,
   bgp_as => 65000,
 }
 
-# should fail, bad ip
+# FAIL |idempotency=False, setup=False| BGP interface bad IP
 pn_vrouter_bgp { 'bgp-test-vrouter-1 256.1b8.c0.x0':
   ensure => present,
   bgp_as => 65000,
 }
 
-# should fail, bad BGP AS
+# FAIL |idempotency=False, setup=False| BGP interface BGP_AS too small
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
   ensure => present,
   bgp_as => 0,
 }
 
-# should fail, bad BGP AS
+# FAIL |idempotency=False, setup=False| BGP interface BGP_AS too large
 pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.10':
   ensure => present,
   bgp_as => 4294967296,
 }
 
-# create a BGP range on switch 1
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6-10':
-  ensure => present,
-  bgp_as => 65000,
-  increment => 4,
-}
+# TEAR-x-DOWN
 
-# do nothing, already there
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6-10':
-  ensure => present,
-  bgp_as => 65000,
-  increment => 4,
-}
-
-# delete a BGP range on switch 1
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6-10':
-  ensure => absent,
-  bgp_as => 65000,
-  increment => 4,
-}
-
-# do nothing, already gone
-pn_vrouter_bgp { 'bgp-test-vrouter-1 172.168.10.6-10':
-  ensure => absent,
-  bgp_as => 65000,
-  increment => 4,
-}
-
-# TEAR-DOWN
+$vnet = 'puppet-ansible-fab-global'
 
 pn_vrouter { 'bgp-test-vrouter-1':
   ensure     => absent,
-  switch     => 'dorado-tme-1',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => $vnet',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -160,13 +112,13 @@ pn_vrouter { 'bgp-test-vrouter-1':
 pn_vrouter_loopback { 'bgp-test-vrouter-1 172.16.1.1':
   before => Pn_vrouter['bgp-test-vrouter-1'],
   ensure => absent,
-  switch => 'dorado-tme-1',
+  switch => $switch1,
 }
 
 pn_vrouter { 'bgp-test-vrouter-2':
   ensure     => absent,
-  switch     => 'dorado-tme-2',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch2,
+  vnet       => $vnet,
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -175,7 +127,7 @@ pn_vrouter { 'bgp-test-vrouter-2':
 pn_vrouter_loopback { 'bgp-test-vrouter-2 172.16.1.2':
   before => Pn_vrouter['bgp-test-vrouter-2'],
   ensure => absent,
-  switch => 'dorado-tme-2',
+  switch => $switch2,
 }
 
 #END

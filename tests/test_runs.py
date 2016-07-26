@@ -774,6 +774,8 @@ Manifest:
 
         :return: ---
         """
+        self.message('debug', "Executing external conditions")
+
         for key in conditions:
 
             value = conditions[key]
@@ -793,12 +795,16 @@ Manifest:
                     'puppet apply --detailed-exitcodes run.pp', more=True)
                 if ex != 0 and ex != 2:
                     if not ignore_failures:
+                        self.message('debug', "V: %s E: %s EX: %s CMD: %s" %
+                                     (v, e, ex, cmd))
                         self.message('console', "Condition %s failed" % key)
                         return -1
 
             else:
                 self.message('console', "Condition %s was not recognized" % key)
                 return -1
+
+        self.message('debug', "Finished executing external conditions")
 
         return 0
 
@@ -1089,9 +1095,9 @@ Manifest:
 
                 options = manifests_hash[key][2]
 
-                # Options are capital because I couldn't think of anything else
                 idempotency_option = idempotency
                 matchers_option = 'default'
+                pre_conditions = None
 
                 if options is not None:
                     options = re.match(r'^\|(.*)\|', options)
@@ -1121,13 +1127,19 @@ Manifest:
                             else:
                                 post_clean = True
                             self.no_clean_on_entry = not post_clean
+                        no_set = re.match('setup=(.*)', option)
+                        if no_set:
+                            if no_set.group(1) == 'False':
+                                pre_conditions = {}
+
+                if pre_conditions is None:
+                    pre_conditions = preconditions
 
                 expect = True if manifests_hash[key][0] == 'PASS' else False
                 manifest = manifests_hash[key][1]
 
                 manifest = self.populate_switches(manifest)
 
-                matchers = []
                 explicit = False
 
                 if matchers_option == 'default':
@@ -1135,11 +1147,13 @@ Manifest:
                 elif matchers_option == 'none' or matchers_option == 'None':
                     matchers = self.no_changes
                     explicit = True
+                else:
+                    matchers = [matchers_option]
 
                 self.assert_exec_equals(manifest, key,
                                         matchers, expect=expect,
                                         explicit=explicit,
-                                        pre_conditions=preconditions,
+                                        pre_conditions=pre_conditions,
                                         post_conditions=postconditions)
 
                 if idempotency and idempotency_option:
@@ -1147,7 +1161,7 @@ Manifest:
                     self.assert_exec_equals(manifest, key + " idempotency",
                                             self.no_changes, explicit=True,
                                             expect=expect,
-                                            pre_conditions=preconditions,
+                                            pre_conditions=pre_conditions,
                                             post_conditions=postconditions)
 
                 # self.assert_state_equals(expect, '')
@@ -1190,8 +1204,8 @@ Manifest:
         """
         switch1, switch2 = self.switches[0], self.switches[1]
 
-        first = re.compile('(\$SWITCH1)')
-        second = re.compile('(\$SWITCH2)')
+        first = re.compile('(\$SWITCH1)|(\$switch1)')
+        second = re.compile('(\$SWITCH2)|(\$switch2)')
 
         manifest = first.sub("'%s'" % switch1, manifest)
 

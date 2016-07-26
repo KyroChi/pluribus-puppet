@@ -26,8 +26,8 @@ def tests(runner):
     runner.clean_setup()
 
 if __name__ == "__main__":
-    SWITCH1 = 'charmander.pluribusnetworks.com'
-    SWITCH2 = 'squirtle.pluribusnetworks.com'
+    SWITCH1 = 'charmander'
+    SWITCH2 = 'squirtle'
     runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
                     no_clean_on_entry=True, no_clean_on_exit=True)
     tests(runner)

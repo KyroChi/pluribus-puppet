@@ -12,9 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source 'https://rubygems.org'
+import sys
+sys.path.append('../')
+from test_runs import TestRunner, Test
 
-gem 'rspec'
-gem 'rspec-puppet'
-gem 'puppet'
-gem 'ipaddr'
+def tests_two_nodes(runner):
+    runner.clean_setup()
+    runner.auto_gen_tests(path='../runs/pn_vrouter_bgp_runs.pp')
+    runner.clean_setup()
+
+if __name__ == "__main__":
+    SWITCH1 = 'squirtle'
+    SWITCH2 = 'charmander'
+    runner = TestRunner([SWITCH1, SWITCH2], debugging=False, logging=False,
+                    no_clean_on_entry=True)
+    tests_two_nodes(runner)
+    runner.end_tests()

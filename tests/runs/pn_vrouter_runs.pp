@@ -12,235 +12,140 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# START
-
-# Should pass, creating a new vrouter
+# PASS |post-clean=False| Create a new vrouter.
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# should pass, already exists
-pn_vrouter { 'test-vrouter':
-  ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-# should pass, deleting vrouter
+# PASS Delete a vrouter.
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# should pass, already deleted
-pn_vrouter { 'test-vrouter':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-# vRouters on multiple switches
+# PASS Create vRouters on multiple switches.
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
-  switch     => 'squirtle.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch2,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# again, should do nothing
-pn_vrouter { 'test-vrouter-1':
-  ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-pn_vrouter { 'test-vrouter-2':
-  ensure     => present,
-  switch     => 'squirtle.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-# delete vrouters on multiple switches
+# PASS Delete vrouters on multiple switches.
 pn_vrouter { 'test-vrouter-1':
   ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => absent,
-  switch     => 'squirtle.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch2,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# delete vrouters on multiple switches again, nothing should happen
-pn_vrouter { 'test-vrouter-1':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-pn_vrouter { 'test-vrouter-2':
-  ensure     => absent,
-  switch     => 'squirtle.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-# should fail, can't have two vrouters on the same switch
+# FAIL |idempotency=False| Can't have two vrouters on the same switch.
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1',
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
-  switch     => 'squirtle.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch2,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# clean up last test
-pn_vrouter { 'test-vrouter-1':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-pn_vrouter { 'test-vrouter-2':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-# should fail, name is wrong
+# FAIL |idempotency=False| vRouter name is wrong.
 pn_vrouter { 'test vrouter 1':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# should fail, switch doesn't exist
+# FAIL |idempotency=False| vRouter; switch doesn't exist.
 pn_vrouter { 'test-vrouter-fake':
   ensure     => present,
   switch     => 'dorado-tme-fake',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# should fail, vnet doesn't exist
+# FAIL |idempotency=False| vRouter; vnet doesn't exist. 
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global-fake',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global-fake',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
 
-# should fail, hw_vrrp_id isn't a number
+# FAIL |idempotency=False| vRouter; vrrp id is not a number.
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 'a',
 }
 
-# should warn that both BGP params aren't specified
+# PASS Create another, more complex vRouter.
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-  router_id  => '198.175.5.10',
-}
-
-# should pass
-pn_vrouter { 'test-vrouter':
-  ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
   router_id  => '198.175.5.10',
 }
-
-# should pass and change router id
+ 
+# PASS |post-clean=False, matchers=Pn_vrouter[test-vrouter]/router_id: router_id changed| Change the router-id.
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
   router_id  => '198.175.5.6',
 }
 
-# should pass and delete the old router and create the new one
+# PASS |pre-clean=False| Overwrite the old vRouter.
 pn_vrouter { 'test-vrouter-overwrite':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $switch1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
   router_id  => '198.175.5.6',
 }
-
-
-# remove
-pn_vrouter { 'test-vrouter-overwrite':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-  bgp_as     => 65000,
-  router_id  => '198.175.5.6',
-}
-
-# END

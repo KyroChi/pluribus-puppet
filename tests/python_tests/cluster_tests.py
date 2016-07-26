@@ -23,8 +23,8 @@ def tests_two_nodes(runner):
 
 if __name__ == "__main__":
 
-    SWITCH1 = 'charmander.pluribusnetworks.com'
-    SWITCH2 = 'squirtle.pluribusnetworks.com'
+    SWITCH1 = 'charmander'
+    SWITCH2 = 'squirtle'
     runner = TestRunner([SWITCH1, SWITCH2], debugging=False, logging=False,
                     no_clean_on_entry=True)
     tests_two_nodes(runner)

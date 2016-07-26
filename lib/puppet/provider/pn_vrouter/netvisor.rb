@@ -20,55 +20,83 @@ include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
-  # Don't pre-fetch as there are too many instances to query and they are not
-  # guaranteed to have unique identifiers across nodes.
-
   desc 'Provider: Netvisor'
 
   commands :cli => 'cli'
 
-  def get_vrouter_info(format, name="#{resource[:name]}")
-    cli(Q, *splat_switch, 'vrouter-show', 'name', name, 'format', format,
-        'no-show-headers').strip
+  def self.instances
+    get_vrouters.collect do |vrouter|
+      vrouter_props = get_vrouter_props(vrouter)
+      new(vrouter_props)
+    end
+  end
+
+  def self.get_vrouters
+    cli('vrouter-show', 'format',
+        'name,vnet,hw-vrrp-id,bgp-as,router-id,location,state', PDQ).split("\n")
+  end
+
+  def self.get_vrouter_props(vrouter)
+    vrouter_props = {}
+    vrouter = vrouter.split('%')
+    vrouter_props[:ensure]     = :present
+    vrouter_props[:provider]   = :netvisor
+    vrouter_props[:name]       = vrouter[0]
+    vrouter_props[:vnet]       = vrouter[1]
+    vrouter_props[:hw_vrrp_id] = vrouter[2]
+    vrouter_props[:bgp_as]     = vrouter[3]
+    vrouter_props[:router_id]  = vrouter[4]
+    vrouter_props[:location]   = vrouter[5]
+    vrouter_props[:service]    = vrouter[6] == 'enabled' ? :enable : :disable
+    vrouter_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
+      end
+    end
   end
 
   def exists?
-
-    @BGP = (resource[:bgp_as] != '' and resource[:router_id] != 'none') ?
-        true : false
-
-    vrouter = cli('vrouter-show', 'location', switch_location,
-                  'format', 'name', PDQ).strip
-    if vrouter != '' and vrouter != resource[:name]
-      cli('vrouter-delete', 'name', vrouter, Q)
-      return false
-    end
-
-    unless cli(*splat_switch, Q) == ''
-      fail("Switch #{resource[:switch]} could not be found on the fabric.")
-    end
-    if cli('vnet-show', 'name', resource[:vnet], Q) == ''
-      fail("vNET #{resource[:vnet]} could not be found.")
-    end
-    if get_vrouter_info('name') != ''
-      return true
-    end
-    false
+    @property_hash[:ensure] == :present
   end
 
   def create
-    cli('--quiet', *splat_switch, 'vrouter-create',
-        'name', resource[:name], 'vnet', resource[:vnet],
-        'hw-vrrp-id', resource[:hw_vrrp_id],
-        resource[:service])
-    if @BGP
-      cli('--quiet', *splat_switch, 'vrouter-modify',
-          'name', resource[:name], 'bgp-as', resource[:bgp_as],
-          'router-id', resource[:router_id])
-    elsif resource[:bgp_as] != '' and resource[:router_id] == 'none' or
-        resource[:bgp_as] == '' and resource[:router_id] != 'none'
-      warn('All BGP parameters must be supplied to enable BGP on this vRouter')
+
+    vrouter = resource[:name]
+
+    vrouters = cli('vrouter-show', 'format', 'name', PDQ).split("\n")
+    locations = cli('vrouter-show', 'format', 'location', PDQ).split("\n")
+
+    unless vrouters.include? vrouter
+      if locations.include? switch_location
+        vrouter = cli('vrouter-show', 'location', switch_location, 'format',
+                      'name', PDQ).strip
+        cli(*splat_switch, 'vrouter-delete', 'name', vrouter)
+      end
     end
+
+    out = cli('--quiet', *splat_switch, 'vrouter-create',
+              'name', resource[:name], 'vnet', resource[:vnet],
+              'hw-vrrp-id', resource[:hw_vrrp_id],
+              resource[:service])
+
+    if out =~ /not the name of a switch/
+      # Can't belive I have to do this check
+      fail('Switch does not exist')
+    end
+
+    if resource[:bgp_as] != :none
+      cli('vrouter-modify', 'name', resource[:name], 'bgp-as', resource[:bgp_as])
+    end
+
+    if resource[:router_id] != :none
+      cli('vrouter-modify', 'name', resource[:name],
+          'router-id', resource[:router_id])
+    end
+
   end
 
   def destroy
@@ -80,7 +108,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def vnet
-    get_vrouter_info('vnet')
+    @property_hash[:vnet]
   end
 
   def vnet=(value)
@@ -89,7 +117,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def hw_vrrp_id
-    get_vrouter_info('hw-vrrp-id')
+    @property_hash[:hw_vrrp_id]
   end
 
   def hw_vrrp_id=(value)
@@ -98,10 +126,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def service
-    if get_vrouter_info('state') == 'enabled'
-      return :enable
-    end
-    return :disable
+    @property_hash[:service]
   end
 
   def service=(value)
@@ -110,10 +135,10 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def bgp_as
-    if @BGP
-      get_vrouter_info('bgp-as')
+    if resource[:bgp_as] == :none
+      return resource[:bgp_as]
     end
-    resource[:bgp_as]
+    @property_hash[:bgp_as]
   end
 
   def bgp_as=(value)
@@ -122,14 +147,10 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def router_id;
-    if @BGP
-      id = get_vrouter_info('router-id')
-      if id == '' and resource[:router_id] == 'none'
-        return resource[:router_id]
-      end
-      return id
+    if resource[:router_id] == :none
+      return resource[:router_id]
     end
-    resource[:router_id]
+    @property_hash[:router_id]
   end
 
   def router_id=(value)

@@ -12,9 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source 'https://rubygems.org'
-
-gem 'rspec'
-gem 'rspec-puppet'
-gem 'puppet'
-gem 'ipaddr'
+pn_vrouter { 'test-vrouter':
+  ensure     => present,
+  vnet       => 'puppet-ansible-fab-global',
+  service    => enable,
+  hw_vrrp_id => 22,
+  router_id  => '173.168.87.9'
+}
+ 
+pn_vrouter_ospf { 'test-vrouter 172.168.10.9/24':
+  ensure    => present,
+  ospf_area => 0,
+}
+ 
+pn_vrouter_ospf { 'test-vrouter 168.54.10.18/0':
+  ensure    => present,
+  ospf_area => 0,
+}
+ 
+pn_vrouter_ospf { 'test-vrouter 174.168.10.0/24':
+  ensure    => present,
+  ospf_area => 2,
+}
+ 
+pn_vrouter_ospf { 'test-vrouter 183.49.5.0/24':
+  ensure    => present,
+  ospf_area => 0,
+}

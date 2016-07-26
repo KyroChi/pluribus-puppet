@@ -28,214 +28,124 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
   #
   commands :cli => 'cli'
 
-  def build_vrrp_primary(i)
-
-    out = cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-              @vrouter, 'ip',
-              build_ip(0, resource[:vrrp_ip], @mask, i),
-              'format', 'nic', PDQ).split('%')
-
-    unless out[1].nil?
-      return out[1].strip
+  def self.instances
+    get_ifs.collect do |interface|
+      if_props = get_if_props(interface)
+      new(if_props)
     end
-    fail('no primary interface')
+  end
+
+  def self.get_ifs
+    cli('vrouter-interface-show', 'format',
+        'ip,vlan,netmask,nic', PDQ).split("\n")
+  end
+
+  def self.get_if_props(interface)
+    if_props = {}
+    interface = interface.split('%')
+    if_props[:ensure]        = :present
+    if_props[:provider]      = :netvisor
+    if_props[:name]          = interface[2] + ' ' + interface[1] + '/' +
+                               interface[3]
+    if_props[:vrouter]       = interface[0]
+    nic = interface[4]
+    using_nic = cli('vrouter-interface-show', 'vrrp-primary', nic, 'format',
+                    'ip,netmask,vrrp-priority', PDQ).strip
+
+    if using_nic != ''
+      un = using_nic.split('%')
+      if_props[:vrrp_ip] = un[1] + '/' + un[2]
+      if_props[:vrrp_priority] = un[3]
+    else
+      if_props[:vrrp_ip] = if_props[:vrrp_priority] = :none
+    end
+
+    if_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
+      end
+    end
   end
 
   def exists?
-
-    location = switch_location
-
-    vrouter_locations = cli('vrouter-show', 'format',
-                            'location', PDQ).split("\n")
-
-    vrouter_locations.each do |loc|
-      if loc == location
-        @vrouter = cli('vrouter-show', 'location', location,
-                       'format', 'name', PDQ).strip
-      end
-    end
-
-    unless @vrouter
-      if resource[:ensure] == :present
-        vnet = cli(*splat_switch, 'vnet-show',
-                   'format', 'name', PDQ).split("\n")[0].split('%')[0]
-        @vrouter = "#{location}-vrouter"
-        cli('vrouter-create', 'name', @vrouter, 'vnet', vnet, 'enable',
-            'hw-vrrp-id', '18', Q)
-      else
-        return false
-      end
-    end
-
-    @vrrp = false
-    if resource[:vrrp_priority] != 'none' and
-        resource[:vrrp_ip] != 'none'
-      if resource[:vrrp_ip] == resource[:name].split(' ')[1]
-        fail('IP address and VRRP address must be different')
-      else
-        vip = resource[:vrrp_ip].split('.')
-        ip = resource[:name].split(' ')[1].split('.')
-        if (vip[0] != ip[0] or vip[1] != ip[1] or vip[2] != ip[2]) or
-            ip[3].strip == vip[3].strip
-          fail('IP address and VRRP address must be on the same subnet')
-        end
-      end
-      @vrrp = true
-      @vrrp_ip, @vrrp_mask = resource[:vrrp_ip].split '/'
-
-      @vrrp_hw_id = cli(*splat_switch, 'vrouter-show',
-                        'name', @vrouter,
-                        'format', 'hw-vrrp-id', PDQ).strip
-
-    elsif resource[:vrrp_priority] != 'none' or
-        resource[:vrrp_ip] != 'none'
-
-      if resource[:ensure].to_s == 'present'
-        warn("Not all VRRP parameters defined, creating an IP interface" +
-                 " instead")
-
-      end
-      @vrrp = false
-    end
-
-    range, x, @ip = resource[:name].rpartition(' ')
-    @ip, @mask = @ip.split('/')
-    @ids = deconstruct_range(range)
-
-    @ids.each do |i|
-
-      if cli(*splat_switch, 'vlan-show', 'id', i, 'format', 'id', PDQ) == ''
-        cli(*splat_switch, 'vlan-create', 'id', i, 'scope', 'fabric')
-      end
-
-      if cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-             @vrouter, 'nic',
-             get_nic(1, @vrouter, @ip, @mask, i), Q) == ''
-        if resource[:ensure].to_s == 'present'
-          return false
-        end
-      else
-        if resource[:ensure].to_s == 'absent'
-          return true
-        end
-      end
-
-      if @vrrp
-        unless cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-               @vrouter, 'nic',
-                   get_nic(1, @vrouter, @vrrp_ip, @mask, i), Q) == ''
-
-          if cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-                 @vrouter, 'nic',
-                 get_nic(1, @vrouter, @vrrp_ip, @mask, i),
-                 'format', 'vrrp-id', PDQ).split('%')[1].nil?
-            if resource[:ensure].to_s == 'present'
-              return false
-            end
-
-          else
-
-            if resource[:ensure].to_s == 'absent'
-              return true
-            end
-
-          end
-        end
-      end
-    end
-    # if the above logic returns neither true or false than all of the resources
-    # are in the correct state and exists returns whatever Puppet is looking for
-    if resource[:ensure].to_s == 'absent'
-      return false
-    else
-      return true
-    end
+    @property_hash[:ensure] == :present
   end
 
   def create
-    @ids.each do |i|
 
-      interface_ip = build_ip(1, @ip, @mask, i)
+    @vrouter_name = nil
+    ip = resource[:name].split(' ')[1]
+    ip, mask = ip.split('/')
 
-      current = cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-                    @vrouter, 'ip', interface_ip, 'format', 'nic',
+    locations = cli(*splat_switch, 'vrouter-show', 'format', 'location,name',
                     PDQ).split("\n")
 
-      if current != '' and
-          get_nic(1, @vrouter, @ip, @mask, i).strip == ''
-
-        current.sort.reverse.each do |c|
-          cli('vrouter-interface-remove', 'vrouter-name', @vrouter,
-              'nic', c.split('%')[1].strip)
-        end
-      end
-
-      if cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-             @vrouter, 'nic',
-             get_nic(1, @vrouter, @ip, @mask, i), Q) == ''
-
-        cli(*splat_switch, 'vrouter-interface-add',
-            'vrouter-name', @vrouter, 'ip', interface_ip,
-            'vlan', i, 'if', 'data')
-
-        if @vrrp
-          vrrp_ip = build_ip(1, @vrrp_ip, @vrrp_mask, i)
-          if cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-                 @vrouter, 'nic',
-                 get_nic(1, @vrouter, @vrrp_ip, @mask, i),
-                 Q) == ''
-
-            cli(*splat_switch, 'vrouter-interface-add',
-                'vrouter-name', @vrouter, 'ip', vrrp_ip,
-                'vlan', i, 'if', 'data', 'vrrp-id', @vrrp_hw_id,
-                'vrrp-primary', build_vrrp_primary(i),
-                'vrrp-priority', resource[:vrrp_priority])
-
-          else
-
-            interfaces = cli(*splat_switch, 'vrouter-interface-show',
-                             'vrouter-name', @vrouter,
-                             'ip', vrrp_ip, PDQ, 'format', 'ip').split("\n")
-
-            @exists = false
-            interfaces.each do |j|
-              if j.split('%')[1] == vrrp_ip
-                @exists = true
-              end
-            end
-
-            unless @exists
-              cli(*splat_switch, 'vrouter-interface-add',
-                  'vrouter-name', @vrouter, 'ip', vrrp_ip,
-                  'vlan', i, 'if', 'data', 'vrrp-id', @vrrp_hw_id,
-                  'vrrp-primary', build_vrrp_primary(i),
-                  'vrrp-priority', resource[:vrrp_priority])
-            end
-          end
-        end
+    locations.each do |vrouter|
+      loc, vrouter = vrouter.split('%')
+      if loc == switch_location
+        @vrouter_name = vrouter
       end
     end
+
+    vlan = resource[:name].split(' ')[0]
+
+    vlans = cli(*splat_switch, 'vlan-show', 'format', 'id', PDQ).split("\n")
+    vlans.each do |v|
+      v = v.split('%')
+      vlan = nil if v[0] == vlan
+    end
+
+    if vlan
+      cli(*splat_switch, 'vlan-create', 'id', vlan, 'scope', 'fabric')
+    end
+
+    vlan = resource[:name].split(' ')[1].split('.')[0]
+    unless @vrouter_name
+      vnet = cli(*splat_switch, 'vnet-show',
+                 'format', 'name', PDQ).split("\n")[0].split('%')[0]
+      location = `hostname`.strip
+      @vrouter_name = "#{location.split('.')[0]}-vrouter"
+      cli('vrouter-create', 'name', @vrouter_name, 'vnet', vnet, 'enable',
+          'hw-vrrp-id', '18', Q)
+    end
+
+    cli(*splat_switch, 'vrouter-interface-add', 'vrouter-name', @vrouter_name,
+        'ip', resource[:name].split(' ')[1], 'vlan', vlan, 'if', 'data')
+
+    if resource[:vrrp_ip] != :none and resource[:vrrp_priority] != :none
+      cli(*splat_switch, 'vrouter-interface-add', 'vrouter-name', @vrouter_name,
+          'ip', resource[:vrrp_ip], 'vlan', vlan, 'vrrp-primary',
+          get_nic(1, @vrouter_name, ip, mask, vlan), 'vrrp-priority',
+          resource[:vrrp_priority])
+    end
+
   end
 
   def destroy
-    @ids.each do |i|
-      # nics to destroy
-      nics = []
-      interface_ip = build_ip(1, @ip, @mask, i)
+    # nics to destroy
+    nics = []
 
-      out = cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
-                @vrouter, 'ip', interface_ip, 'format', 'nic',
-                PDQ).split("\n")
+    vlan = resource[:name].split(' ')[0]
+    ip, mask = resource[:name].split(' ')[1].split('/')
 
-      out.each do |o|
-        nics.push(o.split('%')[1].strip)
-      end
-      nics.sort.reverse.each do |n|
+    interface_ip = build_ip(1, ip, mask, vlan)
 
-        cli(*splat_switch, 'vrouter-interface-remove', 'vrouter-name',
-            @vrouter, 'nic', n)
+    out = cli(*splat_switch, 'vrouter-interface-show', 'vrouter-name',
+              @property_hash[:vrouter], 'ip', interface_ip, 'format', 'nic',
+              PDQ).split("\n")
 
-      end
+    out.each do |o|
+      nics.push(o.split('%')[1].strip)
+    end
+    nics.sort.reverse.each do |n|
+
+      cli(*splat_switch, 'vrouter-interface-remove', 'vrouter-name',
+          @property_hash[:vrouter], 'nic', n)
+
     end
   end
 
@@ -244,29 +154,14 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
   end
 
   def vrrp_ip
-    if @vrrp
+    if @property_hash[:vrrp] or (resource[:vrrp_ip] != :none \
+                                 and resource[:vrrp_priority] != :none)
 
-      @ids.each do |i|
-        interfaces = cli(*splat_switch, 'vrouter-interface-show',
-                         'vrouter-name', @vrouter,
-                         'ip', build_ip(1, @ip, @mask, i),
-                         'format', 'ip,netmask,nic,vrrp-id', PDQ).split("\n")
+      @property_hash[:vrrp_ip]
 
-        interfaces.each do |j|
-          vr, ip, nm, ni, vi = j.split('%')
-
-          unless vi.nil? or vi.strip == ''
-            ip = ip + '/' + nm
-            unless ip == build_ip(1, @vrrp_ip, @mask, i)
-              return ip
-            end
-          end
-
-        end
-      end
-
+    else
+      resource[:vrrp_ip]
     end
-    resource[:vrrp_ip]
   end
 
   def vrrp_ip=(value)
@@ -275,34 +170,12 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
   end
 
   def vrrp_priority
-    if @vrrp
-      @ids.each do |i|
-
-        out = cli(*splat_switch, 'vrouter-interface-show',
-                  'vrouter-name', @vrouter,
-                  'nic', get_nic(1, @vrouter, @vrrp_ip, @mask, i),
-                  'format', 'vrrp-priority', PDQ).split('%')[1]
-
-        if !out.nil? and (out.strip != resource[:vrrp_priority].to_s and
-            !(out.strip == '' and resource[:vrrp_priority].to_s == 'none'))
-
-          return out.strip
-
-        end
-      end
-    end
-    resource[:vrrp_priority]
+    @property_hash[:vrrp_priority]
   end
 
   def vrrp_priority=(value)
-    @ids.each do |i|
-
-      cli(*splat_switch, 'vrouter-interface-show',
-          'vrouter-name', @vrouter, 'nic',
-          get_nic(1, @vrouter, @vrrp_ip, @mask, i),
-          'vrrp-priority', value.to_i.to_s.strip)
-
-    end
+    destroy
+    create
   end
 
 end

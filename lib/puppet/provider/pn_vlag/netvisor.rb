@@ -27,6 +27,11 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
 
   commands :cli => 'cli'
 
+  def trunk_to_id(switch, trunk)
+    cli(*splat_switch(switch), 'trunk-show', 'name', trunk, 'format',
+                 'trunk-id', PDQ).split('%')[0]
+  end
+
   def self.instances
     get_vlags.collect do |vlag|
       vlag_props = get_vlag_props(vlag)
@@ -77,11 +82,20 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   def create
     # switch port and peer-port positions if try 1 errors, need to replace with
     # something other than a try-catch
+
+    port = trunk_to_id(@switch1, resource[:port])
+    if port == '' or port.nil?
+      port = trunk_to_id(@switch1, resource[:peer_port])
+      peer_port = trunk_to_id(@switch2, resource[:port])
+    else
+      peer_port = trunk_to_id(@switch2, resource[:peer_port])
+    end
+
     begin
       cli('switch', @switch1, 'vlag-create',
           'name', resource[:name],
-          'port', resource[:port],
-          'peer-port', resource[:peer_port],
+          'port', port,
+          'peer-port', peer_port,
           'mode', "active-#{resource[:mode]}",
           'peer-switch', @switch2,
           "failover-#{resource[:failover]}-L2",
@@ -92,8 +106,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
     rescue
       cli('switch', @switch1, 'vlag-create',
           'name', resource[:name],
-          'port', resource[:peer_port],
-          'peer-port', resource[:port],
+          'port', peer_port,
+          'peer-port', port,
           'mode', "active-#{resource[:mode]}",
           'peer-switch', @switch2,
           "failover-#{resource[:failover]}-L2",

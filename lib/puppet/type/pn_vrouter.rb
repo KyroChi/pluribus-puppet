@@ -103,6 +103,7 @@ pn_vrouter { 'demo-vrouter':
 
   newproperty(:hw_vrrp_id) do
     desc "A hardware id for VRRP interfaces that may live on this vRouter."
+    defaultto('18')
     validate do |value|
       if value =~ /[^\d*$]/
         raise ArgumentError, 'hw_vrrp_id must be a number'
@@ -112,9 +113,9 @@ pn_vrouter { 'demo-vrouter':
 
   newproperty(:bgp_as) do
     desc "The AS number for any BGP interfaces that will be created later."
-    defaultto('')
+    defaultto(:none)
     validate do |value|
-      if value =~ /[^\d*$]/ and value != ''
+      if value =~ /[^\d*$]/ and value != :none
         raise ArgumentError, 'bgp_as must be a number'
       end
     end
@@ -122,10 +123,10 @@ pn_vrouter { 'demo-vrouter':
 
   newproperty(:router_id) do
     desc "The IP router ID for the vRouter."
-    defaultto('none')
+    defaultto(:none)
     validate do |value|
       if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
-{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ and value != 'none'
+{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ and value != :none
         raise ArgumentError, "Router ID must be a valid IP address"
       end
     end

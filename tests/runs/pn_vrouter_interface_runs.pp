@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# SET-UP
+# SETUP
 pn_vrouter { 'test-vrouter':
   ensure     => present,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
+  switch     => $SWITCH1,
+  vnet       => 'puppet-ansible-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -26,160 +26,71 @@ pn_vlan { '101':
   scope  => fabric,
 }
 
-# create an interface
-pn_vrouter_if { '101 x.x.x.3/24':
+# PASS |setup=False| Create a vRouter interface
+pn_vrouter_if { '101 101.101.101.3/24':
   ensure  => present,
 }
 
-# should do nothing, already exists
-pn_vrouter_if { '101 x.x.x.3/24':
-  ensure  => present,
-}
-
-# should create a range
-pn_vlan { '102-105':
-  ensure => present,
-  scope  => fabric,
-}
-pn_vrouter_if { '102-105 x.x.x.3/24':
-  require => Pn_vlan['102-105'],
-  ensure  => present,
-}
-
-# should do nothing
-pn_vrouter_if { '102-105 x.x.x.3/24':
-  ensure  => present,
-}
-
-# should delete range
-pn_vlan { '102-105':
-  ensure => absent,
-  scope  => fabric,
-}
-pn_vrouter_if { '102-105 x.x.x.3/24':
-  before  => Pn_vlan['102-105'],
-  ensure  => absent,
-}
-
-# should do nothing, already deleted
-pn_vrouter_if { '102-105 x.x.x.3/24':
-  ensure  => absent,
-}
-
-# create a vrrp interface
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS Create a VRRP interface
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
+  vrrp_ip       => '101.101.101.1/24',
   vrrp_priority => 110
 }
 
-# should do nothing, already created
-pn_vrouter_if { '101 x.x.x.2/24':
-  ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
-  vrrp_priority => 110
-}
-
-# delete a vrrp interface
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |setup=False| Delete a VRRP interface
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => absent,
-  vrrp_ip       => 'x.x.x.1/24',
-  vrrp_priority => 110
 }
 
-# should do nothing already deleted
-pn_vrouter_if { '101 x.x.x.2/24':
-  ensure        => absent,
-  vrrp_ip       => 'x.x.x.1/24',
-  vrrp_priority => 110
-}
-
-# should fail, incorrect namevar, no netmask
-pn_vrouter_if { '101 x.x.x.2':
+# FAIL |setup=False, idempotency=False| vRouter interface bad namevar
+pn_vrouter_if { '101 101.101.101.2':
   ensure  => present,
 }
 
-# should fail, vrrp_ip matches interface ip
-pn_vrouter_if { '101 x.x.x.2/24':
+# FAIL |setup=False, idempotency=False| vRouter interface bad vrrp ip
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.2/24',
+  vrrp_ip       => '101.101.101.2/24',
   vrrp_priority => 110
 }
 
-# should fail, vrouter doesn't exist
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS Create a VRRP interface
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
+  vrrp_ip       => '101.101.101.1/24',
   vrrp_priority => 110
 }
 
-# create a vrrp interface
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |matchers=if[101 101.101.101.2/24]/vrrp_ip: vrrp_ip changed, setup=False| Change VRRP ip
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
+  vrrp_ip       => '101.101.101.4/24',
   vrrp_priority => 110
 }
 
-# change vrrp_id
-pn_vrouter_if { '101 x.x.x.2/24':
-  ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
-  vrrp_priority => 110
-}
-
-# create an interface
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |setup=False, idempotency=False| Create a vrouter interface
+pn_vrouter_if { '101 101.101.101.8/24':
   ensure  => present,
 }
 
-# make it vrrp
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |setup=False, matchers=if[101 101.101.101.2/24]/vrrp_ip: vrrp_ip changed '101.101.101.4/24' to '101.101.101.1/24'| Change x.x.x.2/24 to a VRRP interface
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
+  vrrp_ip       => '101.101.101.1/24',
   vrrp_priority => 110
 }
 
-# change priority
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |setup=False, matchers=if[101 101.101.101.2/24]/vrrp_priority: vrrp_priority changed| vrouter interface change priority
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.1/24',
+  vrrp_ip       => '101.101.101.1/24',
   vrrp_priority => 118
 }
 
-# change vrrp ip
-pn_vrouter_if { '101 x.x.x.2/24':
+# PASS |setup=False, matchers=if[101 101.101.101.2/24]/vrrp_ip: vrrp_ip changed| vrouter interface change vrrp ip
+pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
-  vrrp_ip       => 'x.x.x.4/24',
+  vrrp_ip       => '101.101.101.4/24',
   vrrp_priority => 118
 }
-
-# should pass
-pn_vrouter { 'test-vrouter':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-pn_vrouter_if { '101 x.x.x.2/24':
-  ensure  => present,
-  require => Pn_vrouter['test-vrouter'],
-}
-
-
-# TEAR-DOWN
-pn_vrouter { 'test-vrouter':
-  ensure     => absent,
-  switch     => 'charmander.pluribusnetworks.com',
-  vnet       => 'puppet-ansible-chef-fab-global',
-  service    => 'enable',
-  hw_vrrp_id => 18,
-}
-
-pn_vlan { '101':
-  ensure => absent,
-  scope  => fabric,
-}
-
-#END
