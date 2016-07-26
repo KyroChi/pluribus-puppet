@@ -90,7 +90,7 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
         raise ArgumentError, 'vRouter name can only contain letters, numbers,' +
             ' _, ., :, and -'
       end
-      if ip !~ /^(?:[0-9]{1,3}\.){3}(([0-9]{1,3}|[0-9]{1,3}-[0-9]{1,3})(,|\z))*$/
+      if ip !~ /^((?:[0-9]{1,3}\.){3}([0-9]{1,3})(,|\z))*$/
         raise ArgumentError, 'Name must include an IP or BGP pattern'
       end
       raise ArgumentError, 'Too many arguments' if overflow
@@ -113,16 +113,6 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
     validate do |value|
       unless (1..4294967295) === value.to_i
         raise ArgumentError, 'BGP AS must be between 1 and 4294967295'
-      end
-    end
-  end
-
-  newproperty(:increment) do
-    desc "The increment if there is a specified range."
-    defaultto(1)
-    validate do |value|
-      unless (1..255) === value.to_i
-        raise ArgumentError, 'Increment must be an Integer between 1 and 255'
       end
     end
   end

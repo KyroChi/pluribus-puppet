@@ -22,74 +22,49 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
 
   commands :cli => 'cli'
 
-  def decon_bgp_rng(ip = @i, increment = resource[:increment])
-    @range = []
-    base = ip.match(/(([\d]{1,3}\.){1,3})/).captures[0]
-    ips = ip.match(/([\d\-]*,|[\d\-]*$)/).captures
-    ips.each do |i|
-      if i.match(/-/)
-        lower, upper = i.split('-')
-        lower = lower.to_i; upper = upper.to_i
-        (lower, upper = upper, lower) if lower > upper
-        until upper < lower
-          @range.push(base + lower.to_s)
-          lower += increment.to_i
-        end
-      else
-        @range.push(base + "#{i}")
-      end
+  def self.instances
+    get_bgp.collect do |bgp|
+      bgp_props = get_bgp_props(bgp)
+      new(bgp_props)
     end
   end
 
-  def get_bgp_info(format, i)
-    out = cli(Q, *splat_switch, 'vrouter-bgp-show',
-              'vrouter-name', @v, 'neighbor', i, 'format', format,
-              'no-show-headers', 'parsable-delim', '%').split('%')
-    if out[1]
-      return out[1].strip
+  def self.get_bgp
+    cli('vrouter-bgp-show', 'format', 'neighbor,remote-as', PDQ).split("\n")
+  end
+
+  def self.get_bgp_props(bgp)
+    bgp_props = {}
+    bgp = bgp.split('%')
+    bgp_props[:ensure]   = :present
+    bgp_props[:provider] = :netvisor
+    bgp_props[:name]     = bgp[0] + ' ' + bgp[1]
+    bgp_props[:bgp_as]   = bgp[2]
+    bgp_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
+      end
     end
-    out[0]
   end
 
   def exists?
-    @v, @i = resource[:name].split ' '
-
-    if cli(*splat_switch, 'vrouter-show', 'name', @v, Q) == ''
-      if resource[:ensure] == :present
-        fail("vRouter #{@v} does not exist")
-      else
-        return false
-      end
-    end
-
-    decon_bgp_rng
-    @range.each do |i|
-      if cli(Q, *splat_switch, 'vrouter-bgp-show',
-             'vrouter-name', @v, 'neighbor', i) == ''
-        return false
-      end
-    end
-    true
+    @property_hash[:ensure] == :present
   end
 
   def create
-    @range.each do |i|
-      if cli(Q, *splat_switch, 'vrouter-bgp-show',
-             'vrouter-name', @v, 'neighbor', i) == ''
-        cli(Q, *splat_switch, 'vrouter-bgp-add',
-            'vrouter-name', @v, 'neighbor', i, 'remote-as', resource[:bgp_as])
-      end
-    end
+    vrouter, neighbor = resource[:name].split(' ')
+    cli(Q, *splat_switch, 'vrouter-bgp-add', 'vrouter-name', vrouter,
+        'neighbor', neighbor, 'remote-as', resource[:bgp_as])
   end
 
   def destroy
-    @range.each do |i|
-      unless cli(Q, *splat_switch, 'vrouter-bgp-show',
-             'vrouter-name', @v, 'neighbor', i) == ''
-        cli(Q, *splat_switch, 'vrouter-bgp-remove', 'vrouter-name', @v,
-            'neighbor', i)
-      end
-    end
+    vrouter, neighbor = resource[:name].split(' ')
+    cli(Q, *splat_switch, 'vrouter-bgp-remove', 'vrouter-name', vrouter,
+        'neighbor', neighbor)
   end
 
   def switch
@@ -97,23 +72,13 @@ Puppet::Type.type(:pn_vrouter_bgp).provide(:netvisor) do
   end
 
   def bgp_as
-    @range.each do |i|
-      unless get_bgp_info('remote-as', i) == resource[:bgp_as].to_s
-        return "Incorrect BGP AS"
-      end
-    end
-    resource[:bgp_as]
+    @property_hash[:bgp_as]
   end
 
   def bgp_as=(value)
-    @range.each do |i|
-      cli(Q,  *splat_switch, 'vrouter-bgp-modify', 'vrouter-name', @v,
-          'neighbor', i, 'remote-as', value)
-    end
-  end
-
-  def increment
-    resource[:increment]
+    vrouter, neighbor = resource[:name].split(' ')
+    cli(Q,  *splat_switch, 'vrouter-bgp-modify', 'vrouter-name', vrouter,
+        'neighbor', neighbor, 'remote-as', value)
   end
 
 end
