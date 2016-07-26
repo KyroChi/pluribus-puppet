@@ -91,8 +91,6 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
 
   ensurable
 
-  @ip
-
   newparam(:name) do
     desc "The id of the vLan that the vRouter interface will live on."
     validate do |value|
@@ -128,11 +126,11 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
 
   newproperty(:vrrp_ip) do
     desc "The ip of the VRRP interface."
-    defaultto('none')
+    defaultto(:none)
     # The second ip for the interface
     validate do |value|
       if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9])\.)
-{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/\d{1,2})$/ and value != 'none'
+{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/\d{1,2})$/ and value != :none or value == @ip
         raise ArgumentError, 'VRRP IP must be an actual IP, must also include a netmask'
       end
     end
@@ -140,10 +138,10 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
 
   newproperty(:vrrp_priority) do
     desc "The priority for the VRRP interface."
-    defaultto('none')
+    defaultto(:none)
     validate do |value|
       unless value.to_s =~ /^(2[0-5][0-5]|1[0-9][0-9]|[0-9][0-9]|[0-9])$/ or
-          value == 'none'
+          value == :none
         raise ArgumentError, 'vrrp_priority must be a number between 0 and 255'
       end
     end
