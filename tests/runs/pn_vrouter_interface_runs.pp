@@ -69,11 +69,6 @@ pn_vrouter_if { '101 101.101.101.2/24':
   vrrp_priority => 110
 }
 
-# PASS |setup=False, idempotency=False| Create a vrouter interface
-pn_vrouter_if { '101 101.101.101.8/24':
-  ensure  => present,
-}
-
 # PASS |setup=False, matchers=if[101 101.101.101.2/24]/vrrp_ip: vrrp_ip changed '101.101.101.4/24' to '101.101.101.1/24'| Change x.x.x.2/24 to a VRRP interface
 pn_vrouter_if { '101 101.101.101.2/24':
   ensure        => present,
