@@ -15,19 +15,19 @@
 # SETUP
 pn_cluster { 'vlag-test-cluster':
   ensure => present,
-  nodes  => [$SWITCH1, $SWITCH2]
+  nodes  => [$switch1, $switch2]
 }
 
 pn_lag { 'S1-lag':
   ensure => present,
-  switch => $SWITCH1,
-  ports  => '11,12'
+  switch => $switch1,
+  ports  => '47,48'
 }
 
 pn_lag { 'S2-lag':
   ensure => present,
-  switch => $SWITCH2,
-  ports  => '13,14'
+  switch => $switch2,
+  ports  => '47,48'
 }
 
 # PASS Bringing up a vLAG
