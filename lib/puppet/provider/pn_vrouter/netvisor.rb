@@ -20,9 +20,6 @@ include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
-  # Don't pre-fetch as there are too many instances to query and they are not
-  # guaranteed to have unique identifiers across nodes.
-
   desc 'Provider: Netvisor'
 
   commands :cli => 'cli'

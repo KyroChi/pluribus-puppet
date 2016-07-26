@@ -28,11 +28,12 @@ pn_vlan { '102':
     untagged_ports => none,
 }
 
-pn_vlan { '103-105':
-    ensure         => present,
-    scope          => fabric,
-    description    => 'made-w-puppet',
-    ports          => '55,72',
-    untagged_ports => none,
+Integer[103, 105].each | $i | {
+    pn_vlan { "${i}":
+        ensure         => present,
+        scope          => fabric,
+        description    => 'made-w-puppet',
+        ports          => '55,72',
+        untagged_ports => none,
+    }
 }
-

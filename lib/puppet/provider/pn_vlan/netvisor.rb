@@ -81,8 +81,6 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
       nic = cli('vrouter-interface-show', 'vlan',
                 resource[:name], 'format', 'nic', PDQ).split('%')
       if nic[1]
-        puts cli('vrouter-interface-remove',
-                 'vrouter-name', nic[0], 'nic', nic[1].strip)
         cli('vrouter-interface-remove',
             'vrouter-name', nic[0], 'nic', nic[1].strip)
       end
