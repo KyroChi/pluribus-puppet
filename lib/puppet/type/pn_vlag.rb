@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vlag) do
 
   # DON'T need to make twice for each cluster, switch and peer-switch
@@ -104,6 +110,7 @@ node puppet-agent.pluribusnetworks.com {
 ~~~"
 
   ensurable
+  switch()
 
   newparam(:name) do
     desc "vLAG name"

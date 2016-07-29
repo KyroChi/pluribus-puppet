@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_lag) do
 
   # Handle serious error checking with provider instead of type.
@@ -87,6 +93,7 @@ node your-pluribus-switch {
 }"
 
   ensurable
+  switch()
 
   newparam(:name, :namevar => true) do
     desc "Name of the LAG to create"
@@ -94,16 +101,6 @@ node your-pluribus-switch {
       if value =~ /[^\w.:-]/
         raise ArgumentError, 'LAG name can only contain letters, numbers, ' +
             '_, ., :, and -'
-      end
-    end
-  end
-
-  newproperty(:switch) do
-    desc "Name of the switch where the LAG will be created. Must be on the" +
-             " same fabric as the Puppet Agent"
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, "Invalid switch name #{value}"
       end
     end
   end

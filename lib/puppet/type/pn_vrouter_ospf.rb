@@ -12,11 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 require 'ipaddr'
 
 Puppet::Type.newtype(:pn_vrouter_ospf) do
 
   ensurable
+  switch()
 
   newparam(:name) do
     munge do |value|
@@ -32,16 +39,6 @@ Puppet::Type.newtype(:pn_vrouter_ospf) do
     validate do |value|
       if value =~ /[^\d*$]/ and value != ''
         raise ArgumentError, 'bgp_as must be a number'
-      end
-    end
-  end
-
-  newproperty(:switch) do
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-                             'numbers, _, ., :, and -'
       end
     end
   end

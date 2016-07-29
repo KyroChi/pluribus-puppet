@@ -45,8 +45,9 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
     interface = interface.split('%')
     if_props[:ensure]        = :present
     if_props[:provider]      = :netvisor
-    if_props[:name]          = interface[2] + ' ' + interface[1] + '/' +
+    if_props[:name]          = interface[0] + ' ' + interface[1] + '/' +
                                interface[3]
+    if_props[:vlan]          = interface[2]
     if_props[:vrouter]       = interface[0]
     nic = interface[4]
     using_nic = cli('vrouter-interface-show', 'vrrp-primary', nic, 'format',
@@ -76,8 +77,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
   end
 
   def create
-
-    @vrouter_name = nil
+    @vrouter_name = resource[:name].split(' ')[0]
     ip = resource[:name].split(' ')[1]
     ip, mask = ip.split('/')
 
@@ -91,7 +91,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
       end
     end
 
-    vlan = resource[:name].split(' ')[0]
+    vlan = resource[:vlan]
 
     vlans = cli(*splat_switch, 'vlan-show', 'format', 'id', PDQ).split("\n")
     vlans.each do |v|
@@ -103,7 +103,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
       cli(*splat_switch, 'vlan-create', 'id', vlan, 'scope', 'fabric')
     end
 
-    vlan = resource[:name].split(' ')[1].split('.')[0]
+    vlan = resource[:vlan]
     unless @vrouter_name
       vnet = cli(*splat_switch, 'vnet-show',
                  'format', 'name', PDQ).split("\n")[0].split('%')[0]
@@ -129,7 +129,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
     # nics to destroy
     nics = []
 
-    vlan = resource[:name].split(' ')[0]
+    vlan = resource[:vlan]
     ip, mask = resource[:name].split(' ')[1].split('/')
 
     interface_ip = build_ip(1, ip, mask, vlan)
@@ -141,6 +141,7 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
     out.each do |o|
       nics.push(o.split('%')[1].strip)
     end
+
     nics.sort.reverse.each do |n|
 
       cli(*splat_switch, 'vrouter-interface-remove', 'vrouter-name',
@@ -162,6 +163,15 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
     else
       resource[:vrrp_ip]
     end
+  end
+
+  def vlan
+    @property_hash[:vlan]
+  end
+
+  def vlan=(value)
+    destroy
+    create
   end
 
   def vrrp_ip=(value)

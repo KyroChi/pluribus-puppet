@@ -78,11 +78,16 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   def destroy
     if get_vlan_info(resource[:name], 'id')
       switch = get_vlan_info(resource[:name], 'switch')
-      nic = cli('vrouter-interface-show', 'vlan',
-                resource[:name], 'format', 'nic', PDQ).split('%')
-      if nic[1]
-        cli('vrouter-interface-remove',
-            'vrouter-name', nic[0], 'nic', nic[1].strip)
+
+      nics = cli('vrouter-interface-show', 'vlan',
+                resource[:name], 'format', 'nic', PDQ).split("\n")
+
+      nics.sort.reverse.each do |nic|
+        nic = nic.split('%')
+        location = cli('vrouter-show', 'name', nic[0], 'format', 'location',
+                       PDQ).strip
+        out = cli('switch', location, 'vrouter-interface-remove',
+                  'vrouter-name', nic[0], 'nic', nic[1].strip)
       end
       cli(*splat_switch(switch), 'vlan-delete', 'id', resource[:name])
     end

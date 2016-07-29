@@ -14,9 +14,9 @@
 
 require File.expand_path(
     File.join(File.dirname(__FILE__),
-              '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+              '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
 
-include PuppetX::Pluribus::MixHelper
+include PuppetX::Pluribus::TypeHelper
 
 
 Puppet::Type.newtype(:pn_vrouter_if) do
@@ -90,19 +90,15 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
 "
 
   ensurable
+  switch()
 
   newparam(:name) do
     desc "The id of the vLan that the vRouter interface will live on."
     validate do |value|
       v = value.rpartition(' ')
-      unless v.first =~ /^\d{1,4}$/
-        raise ArgumentError, 'vLAN ID must be a number'
-      end
-      ids = deconstruct_range(v.first)
-      ids.each do |i|
-        unless (2..4092) === i.to_i #i.to_i.between?(2, 4092)
-          raise ArgumentError, 'vLAN ID must be between 2 and 4092'
-        end
+      if v.first =~ /[^\w.:-]/
+        raise ArgumentError, "vRouter name must follow naming rules, " +
+                             "#{v.first} is not a valid name"
       end
       # Regex to check ips, check Rubular.com if you don't believe me
       unless v.last =~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
@@ -113,15 +109,8 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
     end
   end
 
-  newproperty(:switch) do
-    desc "The name of the switch where the IP interface will be created."
-    defaultto(:local)
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-            'numbers, _, ., :, and -'
-      end
-    end
+  newproperty(:vlan) do
+
   end
 
   newproperty(:vrrp_ip) do

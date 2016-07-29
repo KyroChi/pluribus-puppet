@@ -1116,17 +1116,17 @@ Manifest:
                         pre_clean_opt = re.match('pre-clean=(.*)', option)
                         if pre_clean_opt:
                             if pre_clean_opt.group(1) == 'False':
-                                pre_clean = False
+                                self.no_clean_on_entry = False
                             else:
-                                pre_clean = True
-                            self.no_clean_on_entry = not pre_clean
+                                self.no_clean_on_entry = True
+                            self.no_clean_on_entry = not pre_cleaning
                         post_clean_opt = re.match('post-clean=(.*)', option)
                         if post_clean_opt:
                             if post_clean_opt.group(1) == 'False':
                                 post_clean = False
                             else:
                                 post_clean = True
-                            self.no_clean_on_entry = not post_clean
+                            self.no_clean_on_entry = not post_cleaning
                         no_set = re.match('setup=(.*)', option)
                         if no_set:
                             if no_set.group(1) == 'False':

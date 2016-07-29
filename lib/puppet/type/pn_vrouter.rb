@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vrouter) do
 
   @doc = "Manage vRouters.
@@ -64,6 +70,7 @@ pn_vrouter { 'demo-vrouter':
 "
 
   ensurable
+  switch
 
   newparam(:name) do
     desc "The name of the vRouter to manage."
@@ -75,22 +82,15 @@ pn_vrouter { 'demo-vrouter':
     end
   end
 
-  newproperty(:switch) do
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-            'numbers, _, ., :, and -'
-      end
-    end
-  end
-
   newproperty(:vnet) do
     desc "vNET assigned to the service."
     validate do |value|
       if value =~ /[^\w.:-]/
         raise ArgumentError, 'vNET name can only contain letters, numbers, ' +
             '_, ., :, and -'
+      end
+      unless Facter.value('avaliable_vnets').include? value
+        raise ArgumentError, "vNET #{value} was not found on the fabric"
       end
     end
   end

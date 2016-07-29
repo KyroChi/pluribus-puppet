@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vrouter_loopback) do
 
   @doc = "Creates a vRouter loopback interface on the destination switch.
@@ -43,6 +49,7 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
 "
 
   ensurable
+  switch()
 
   newparam(:name) do
     desc "A combination of the vRouter name and the loopback IP address."
@@ -58,17 +65,6 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
       end
       if overflow
         raise ArgumentError, 'Too many arguments'
-      end
-    end
-  end
-
-  newproperty(:switch) do
-    desc "The name of the switch where the IP interface will be created."
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-            'numbers, _, ., :, and -'
       end
     end
   end

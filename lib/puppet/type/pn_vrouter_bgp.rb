@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vrouter_bgp) do
 
   desc "Manage vRouter BGP interfaces. To create a BGP interface you must first
@@ -82,6 +88,7 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
 ```"
 
   ensurable
+  switch()
 
   newparam(:name) do
     validate do |d|
@@ -94,17 +101,6 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
         raise ArgumentError, 'Name must include an IP or BGP pattern'
       end
       raise ArgumentError, 'Too many arguments' if overflow
-    end
-  end
-
-  newproperty(:switch) do
-    desc "The name of the switch where the BGP interface will be created."
-    defaultto(:local)
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-            'numbers, _, ., :, and -'
-      end
     end
   end
 

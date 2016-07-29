@@ -14,9 +14,9 @@
 
 require File.expand_path(
     File.join(File.dirname(__FILE__),
-              '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+              '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
 
-include PuppetX::Pluribus::MixHelper
+include PuppetX::Pluribus::TypeHelper
 
 Puppet::Type.newtype(:pn_vlan) do
 
@@ -65,6 +65,7 @@ pn_vlan { '101':
 }```"
 
   ensurable
+  switch()
 
   newparam(:id) do
     desc "The id of the vLAN to be managed."
@@ -113,17 +114,6 @@ pn_vlan { '101':
       unless value =~ /^((\d{1,4}-\d{1,4})|(\d{1,4})[,\s$]*){1,}$|^(\d{1,4})$/ \
                       or :none
         raise ArgumentError, 'Untagged ports must be a number or range of numbers'
-      end
-    end
-  end
-
-  newproperty(:switch) do
-    desc 'Switch where vLAN will be created'
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, numbers, ' +
-            '_, ., :, and -'
       end
     end
   end
