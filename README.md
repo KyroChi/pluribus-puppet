@@ -4,7 +4,7 @@
 
 | Forge/Official | Development |
 |:--------------:|:-----------:|
-|![Forge](https://img.shields.io/badge/forge-na-red.svg)|![Dev](https://img.shields.io/badge/dev-na-red.svg)
+|![Forge](https://img.shields.io/badge/forge-na-red.svg)|[![Dev](https://img.shields.io/badge/dev-1.0-green.svg)](https://github.com/amitsi/pluribus-puppet/releases/tag/dev-1.0)
 
 ### Table of Contents
 
