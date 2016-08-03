@@ -524,6 +524,8 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
 
 Pluribus Puppet currently only runs on ONVL distributions of Netvisor. This is because the Puppet does not support all distributions of Solaris and cannot be run on the nvOS distribution. This problem is being looked into and hopefully nvOS will be supported alongside ONVL in the near future.
 
+Currently, only fabric over management is supported.
+
 ## Additional Resources
 
 There are currently no additional resources for the Pluribus Puppet module.
