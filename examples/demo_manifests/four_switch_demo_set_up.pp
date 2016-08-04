@@ -19,7 +19,7 @@ $switch4 = 'gyarados'   # leaf 2
 $switch5 = 'lapras'     # leaf 3
 $switch6 = 'jigglypuff' # leaf 4
 
-$vnet = 'puppet-ansible-fab-global'
+$vnet = 'no-fail-fab-global'
 
 # HARD CODED PORTS, CHANGE THEM IF ON A DIFF SETUP!!!!!!!!!
 

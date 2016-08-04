@@ -10,6 +10,27 @@ module PuppetX
       # PDQ means no 'no-show-headers' is needed
       PDQ = ['parsable-delim', '%', Q]
 
+      # Feed a range, returns an array.
+      # accepts comma separated, with or without whitespace, and range operators
+      # if the numbers are reversed it will add them in order as if they were in
+      # the correct order.
+      # all valid ranges: '1', '1,2,3', '1-3', '1-3, 4-7,8-19,    32-22, 88-88'
+      def deconstruct_range (range)
+        out = []
+        return out if range.length == 0
+        range.to_s.gsub(' ', '').split(',').each do |s|
+          if s =~ /-/
+            lo, hi = s.split('-')
+            hi = hi.to_i; lo = lo.to_i
+            hi, lo = lo, hi if hi < lo
+            hi == lo ? out.push(hi.to_s) : (lo..hi).each { |i| out.push i.to_s }
+          else
+            out.push s.to_s
+          end
+        end
+        out
+      end
+
       # Sometimes you need a SPLAT!
       # This method does the same thing as current switch but the return value
       # from this method can be splatted into commands that use shell ordering
