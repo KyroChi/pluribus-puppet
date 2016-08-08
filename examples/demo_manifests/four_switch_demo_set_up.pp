@@ -1,4 +1,4 @@
- # Copyright 2016 Pluribus Networks
+# Copyright 2016 Pluribus Networks
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -248,4 +248,3 @@ pn_vrouter_ospf { 'spine2vrouter 172.26.2.0/24':
 #                                    B G P                                     #
 #                                                                              #
 ################################################################################
-
