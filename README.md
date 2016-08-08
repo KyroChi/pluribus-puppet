@@ -337,6 +337,13 @@ pn_vlan { '101':
 
 Manage vRouters. On systems that only allow one vRouter the latest executed vRouter deceleration will be created.
 
+```
+It is recommended to configure a sleep of 5 seconds between each vRouter command. The following module can be used to configure sleep:
+
+https://forge.puppet.com/fiddyspence/sleep
+
+```
+
 #### Properties
 
 **`name`** is the name of the vRouter to be managed. Name can be any string as long as it only contains `letters`, `numbers`, `_`, `.`, `:`, and `-`. 
