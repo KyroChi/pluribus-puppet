@@ -25,7 +25,7 @@ If you are familiar with the Puppet master-agent setup, you may be weary to setu
 
 If you are a Pluribus employee needing to quickly configure large networks for testing or demos, Puppet offers a quick and repeatable way to create network configurations. The nature of Puppet allows us to completely build, tear-down, and re-build the same setup over and over without worrying about missing a step or debugging a script.
  
- If you are a developer looking to contribute, or a new development team member, please visit the [developer page]().
+ If you are a developer looking to contribute, or a new development team member, please visit the [developer page](doc/developers.md).
 
 ## Module Description
 
