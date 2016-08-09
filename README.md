@@ -4,7 +4,7 @@
 
 | Forge/Official | Development |
 |:--------------:|:-----------:|
-|![Forge](https://img.shields.io/badge/forge-na-red.svg)|![Dev](https://img.shields.io/badge/dev-na-red.svg)
+|![Forge](https://img.shields.io/badge/forge-na-red.svg)|[![Dev](https://img.shields.io/badge/dev-1.0-green.svg)](https://github.com/amitsi/pluribus-puppet/releases/tag/dev-1.0)
 
 ### Table of Contents
 
@@ -372,6 +372,13 @@ pn_vlan { '101':
 
 Manage vRouters. On systems that only allow one vRouter the latest executed vRouter deceleration will be created.
 
+```
+It is recommended to configure a sleep of 5 seconds between each vRouter command. The following module can be used to configure sleep:
+
+https://forge.puppet.com/fiddyspence/sleep
+
+```
+
 #### Properties
 
 **`name`** is the name of the vRouter to be managed. Name can be any string as long as it only contains `letters`, `numbers`, `_`, `.`, `:`, and `-`. 
@@ -592,6 +599,8 @@ node your-pluribus-switch {
 ## Limitations
 
 Pluribus Puppet currently only runs on ONVL distributions of Netvisor. This is because the Puppet does not support all distributions of Solaris and cannot be run on the nvOS distribution. This problem is being looked into and hopefully nvOS will be supported alongside ONVL in the near future.
+
+Currently, only fabric over management is supported.
 
 ## Additional Resources
 
