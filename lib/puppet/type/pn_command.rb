@@ -21,15 +21,46 @@ include PuppetX::Pluribus::TypeHelper
 
 Puppet::Type.newtype(:pn_command) do
 
-  @doc = "This resource executes the contents of the name var on the cli with no
-error checking or other constraints, you can also specify the switch to execute
-the command on"
+  @doc = "Executes arbitrary CLI commands when the manifest is applied to the
+target node. This resource type should be used with caution as its very
+existance is cause for some alarm. Because this has no error checking, the
+command given to it will be passed verbatium to the CLI. This means any errors
+in syntax will not be caught except by the CLI at runtime. This resource always
+returns `False` on its existance, meaning if it is ensured `present` it will
+execute the command **EVERY** time the catalog is applied, meaning there is no
+idempotency for this resource.
+
+The recommended alternative to using this command is to manually type the CLI
+commands into the CLI. This ensures that the commands are not executed too often,
+and allows a greater degree of control over the use of command, and you will have
+access to the error checking that is provided by the CLI.
+
+#### Properties
+
+name is the command that will be run on the target node.
+
+ensure specifes if the command should be applied or not whenthe manifest is
+applied.
+
+switch specifies the switch where the command will be executed.
+
+Example:
+```
+node your-pluribus-switch {
+
+    pn_command { 'lldp-show':
+        ensure => present,
+    }
+
+}
+```
+"
 
   ensurable
   switch()
 
   newparam(:name) do
-    # Sends commands directly to the CLI when executed
+    desc 'Name of the command that will be sent to the CLI'
   end
 
 end

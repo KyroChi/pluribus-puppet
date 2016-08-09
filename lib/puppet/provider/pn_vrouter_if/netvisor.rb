@@ -95,19 +95,6 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
 
     vlan = resource[:vlan]
 
-    vlans = cli(*splat_switch, 'vlan-show', 'format', 'id', PDQ).split("\n")
-    vlans.each do |v|
-      v = v.split('%')
-      vlan = nil if v[0] == vlan
-    end
-
-    if vlan != :none and vlan
-      puts "'#{vlan}'"
-      cli(*splat_switch, 'vlan-create', 'id', vlan, 'scope', 'fabric')
-    end
-
-    vlan = resource[:vlan]
-
     unless @vrouter_name
       vnet = cli(*splat_switch, 'vnet-show',
                  'format', 'name', PDQ).split("\n")[0].split('%')[0]
@@ -182,6 +169,9 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
   end
 
   def vlan
+    if resource[:vlan] == :none
+      return resource[:vlan]
+    end
     @property_hash[:vlan]
   end
 

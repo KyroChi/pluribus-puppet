@@ -93,7 +93,7 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
   switch()
 
   newparam(:name) do
-    desc "The id of the vLan that the vRouter interface will live on."
+    desc "The vrouter name and ip that the vrouter interface will live on"
     validate do |value|
       v = value.rpartition(' ')
       if v.first =~ /[^\w.:-]/
@@ -110,7 +110,15 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
   end
 
   newproperty(:vlan) do
-
+    defaultto(:none)
+    validate do |value|
+      unless =~ /^\d{1,3}$/ or value == :none
+        raise ArgumentError, 'vLAN id must be a valid number'
+      end
+      unless value.to_i.between?(2, 4092)
+        raise ArgumentError, 'vLAN id must be between 2 and 4092'
+      end
+    end
   end
 
   newproperty(:vrrp_ip) do
@@ -134,6 +142,10 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
         raise ArgumentError, 'vrrp_priority must be a number between 0 and 255'
       end
     end
+  end
+
+  newproperty(:l3_port) do
+    defaultto(:none)
   end
 
 end

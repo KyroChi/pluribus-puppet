@@ -33,21 +33,24 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
   def self.get_vrouters
     cli('vrouter-show', 'format',
-        'name,vnet,hw-vrrp-id,bgp-as,router-id,location,state', PDQ).split("\n")
+        'name,vnet,hw-vrrp-id,bgp-as,router-id,location,state,' +
+        'bgp-redistribute,bgp-max-paths', PDQ).split("\n")
   end
 
   def self.get_vrouter_props(vrouter)
     vrouter_props = {}
     vrouter = vrouter.split('%')
-    vrouter_props[:ensure]     = :present
-    vrouter_props[:provider]   = :netvisor
-    vrouter_props[:name]       = vrouter[0]
-    vrouter_props[:vnet]       = vrouter[1]
-    vrouter_props[:hw_vrrp_id] = vrouter[2]
-    vrouter_props[:bgp_as]     = vrouter[3]
-    vrouter_props[:router_id]  = vrouter[4]
-    vrouter_props[:location]   = vrouter[5]
-    vrouter_props[:service]    = vrouter[6] == 'enabled' ? :enable : :disable
+    vrouter_props[:ensure]           = :present
+    vrouter_props[:provider]         = :netvisor
+    vrouter_props[:name]             = vrouter[0]
+    vrouter_props[:vnet]             = vrouter[1]
+    vrouter_props[:hw_vrrp_id]       = vrouter[2]
+    vrouter_props[:bgp_as]           = vrouter[3]
+    vrouter_props[:router_id]        = vrouter[4]
+    vrouter_props[:location]         = vrouter[5]
+    vrouter_props[:service]          = vrouter[6] == 'enabled' ? :enable : :disable
+    vrouter_props[:bgp_redistribute] = vrouter[7]
+    vrouter_props[:bgp_max_paths]    = vrouter[8]
     vrouter_props
   end
 
@@ -156,6 +159,24 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   def router_id=(value)
     cli('--quiet', *splat_switch, 'vrouter-modify',
         'name', resource[:name], 'router-id', value)
+  end
+
+  def bgp_redistribute
+    @property_hash[:bgp_redistribute]
+  end
+
+  def bgp_redistribute=(value)
+    cli(*splat_switch, 'vrouter-modify', resource[:name],
+        'bgp-redistribute', value)
+  end
+
+  def bgp_max_paths
+    @property_hash[:bgp_max_paths]
+  end
+
+  def bgp_max_paths=(value)
+    cli(*splat_switch, 'vrouter-modify', resource[:name],
+       'bgp-max-paths', value)
   end
 
 end

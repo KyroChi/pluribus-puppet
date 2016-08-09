@@ -66,8 +66,7 @@ pn_vrouter { 'demo-vrouter':
     hw_vrrp_id => 18,
     service    => enable,
 }
-```
-"
+```"
 
   ensurable
   switch
@@ -128,6 +127,19 @@ pn_vrouter { 'demo-vrouter':
       if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
 {3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ and value != :none
         raise ArgumentError, "Router ID must be a valid IP address"
+      end
+    end
+  end
+
+  newproperty(:bgp_redistribute) do
+    newvalues(:none, :static, :connected, :rip, :ospf)
+  end
+
+  newproperty(:bgp_max_paths) do
+    defaultto(:none)
+    validate do |value|
+      unless value !~ /\d/
+        raise ArgumentError, "BGP max paths must be a number"
       end
     end
   end

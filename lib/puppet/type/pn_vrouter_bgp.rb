@@ -24,25 +24,25 @@ Puppet::Type.newtype(:pn_vrouter_bgp) do
 create a [`pn_vrouter_ip`](#pn_vrouter_ip) so that the BGP interface has an
 established ip interface to live on.
 
-#### Properties
+Properties
 
-**`name`** is a combination of the vRouter name and the BGP neighbor IP address,
+name is a combination of the vRouter name and the BGP neighbor IP address,
 separated by a space.
 
-**`ensure`** tells Puppet how to manage the BGP interface. Ensuring `present`
+ensure tells Puppet how to manage the BGP interface. Ensuring `present`
 will mean that the BGP interface will be created and present on the switch after
 a completed catalog run. Setting this to `absent` will ensure that the BGP
 interface is not present on the system after the catalog run.
 
-**`bgp_as`** is the AS ID for the BGP interface.
+bgp_as is the AS ID for the BGP interface.
 
-**_`increment`_** is how much the address will be incremented by in a range.
+increment is how much the address will be incremented by in a range.
 
-**_`switch`_** is the name of the switch where the vRouter BGP interface will
-be hosted. This can be any switch on the fabric. The default value is `local`
-which creates a BGP interface on the node where the resource was declared.
+switch is the name of the switch where the vRouter BGP interface will be
+hosted. This can be any switch on the fabric. The default value is `local` which
+creates a BGP interface on the node where the resource was declared.
 
-#### Example Implementation
+Example Implementation
 
 CLI:
 ```
@@ -63,6 +63,7 @@ pn_vrouter { 'demo-vrouter':
     hw-vrrp-id => 18,
     service => enable,
     bgp_as => '65001',
+    router_id => '172.168.85.8',
 }
 
 pn_vlan { '101':
@@ -76,11 +77,17 @@ pn_vrouter_ip { '101':
     require => Pn_vlan['101'],
     ensure => present,
     vrouter => 'demo-vrouter',
-    ip => 'x.x.x.2',
+    ip => '101.101.101.2',
     mask => '24',
 }
 
 pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
+    require => Pn_vrouter_ip['101'],
+    ensure => present,
+    bgp_as => '65001',
+}
+
+pn_vrouter_bgp { 'demo-vrouter 101.101.101.2':
     require => Pn_vrouter_ip['101'],
     ensure => present,
     bgp_as => '65001',
@@ -97,7 +104,7 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
         raise ArgumentError, 'vRouter name can only contain letters, numbers,' +
             ' _, ., :, and -'
       end
-      if ip !~ /^((?:[0-9]{1,3}\.){3}([0-9]{1,3})(,|\z))*$/
+      if ip !~ /^((?:[0-9]{1,3}\.){3}([0-9]{1,3})(\/\d{0,2})*)*$/
         raise ArgumentError, 'Name must include an IP or BGP pattern'
       end
       raise ArgumentError, 'Too many arguments' if overflow
