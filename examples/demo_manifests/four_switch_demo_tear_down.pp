@@ -19,7 +19,7 @@ $switch4 = 'gyarados'   # leaf 2
 $switch5 = 'lapras'     # leaf 3
 $switch6 = 'jigglypuff' # leaf 4
 
-$vnet = 'puppet-ansible-fab-global'
+$vnet = 'no-fail-fab-global'
 
 # HARD CODED PORTS, CHANGE THEM IF ON A DIFF SETUP!!!!!!!!!
 
@@ -111,7 +111,7 @@ pn_lag { 'spine2-to-leaf4':
 ################################################################################
 
 pn_vlag { 'spine-to-leaf':
-  before    => Pn_lag['spine1-to-leaf', 'spine2-to-leaf'],
+  before   => Pn_lag['spine1-to-leaf', 'spine2-to-leaf'],
   ensure    => absent,
   cluster   => 'spinecluster',
   port      => 'spine1-to-leaf',
@@ -120,17 +120,17 @@ pn_vlag { 'spine-to-leaf':
 }
 
 pn_vlag { 'leafcluster-to-spinecluster':
-  before    => Pn_lag['leaf1-to-spine', 'leaf2-to-spine'],
+  before   => Pn_lag['leaf1-to-spine', 'leaf2-to-spine'],
   ensure    => absent,
   cluster   => 'leafcluster',
   port      => 'leaf1-to-spine',
   peer_port => 'leaf2-to-spine',
   mode      => active,
-  switch    => $switch3,
+  switch    => 'pikachu',
 }
 
 pn_vlag { 'spine-to-leaf3':
-  before    => Pn_lag['spine1-to-leaf3', 'spine2-to-leaf3'],
+  before   => Pn_lag['spine1-to-leaf3', 'spine2-to-leaf3'],
   ensure    => absent,
   cluster   => 'spinecluster',
   port      => 'spine1-to-leaf3',
@@ -139,7 +139,7 @@ pn_vlag { 'spine-to-leaf3':
 }
 
 pn_vlag { 'spine-to-leaf4':
-  before    => Pn_lag['spine1-to-leaf4', 'spine2-to-leaf4'],
+  before   => Pn_lag['spine1-to-leaf4', 'spine2-to-leaf4'],
   ensure    => absent,
   cluster   => 'spinecluster',
   port      => 'spine1-to-leaf4',
@@ -196,7 +196,7 @@ pn_vrouter { 'spine2vrouter':
 Integer[101, 105].each | $i | {
 
   pn_vrouter_if { "spine1vrouter ${i}.${i}.${i}.2/24":
-    before        => [Pn_vrouter['spine1vrouter'],Pn_vlan["${i}"]],
+    before       => Pn_vrouter['spine1vrouter'],
     vlan          => "${i}",
     ensure        => absent,
     vrrp_ip       => "${i}.${i}.${i}.1/24",
@@ -209,7 +209,7 @@ Integer[101, 105].each | $i | {
 Integer[101, 105].each | $i | {
 
   pn_vrouter_if { "spine2vrouter ${i}.${i}.${i}.4/24":
-    before        => [Pn_vrouter['spine2vrouter'], Pn_vlan["${i}"]],
+    before       => Pn_vrouter['spine2vrouter'],
     vlan          => "${i}",
     ensure        => absent,
     vrrp_ip       => "${i}.${i}.${i}.3/24",

@@ -39,7 +39,7 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   end
 
   def self.get_vlans
-    cli(*splat_switch('local'), 'vlan-show', 'format',
+    cli('vlan-show', 'format',
         'id,scope,description,ports,untagged-ports,stats', PDQ).split("\n")
   end
 
@@ -144,7 +144,7 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
       end
     else
       if resource[:untagged_ports] == u_ports or
-        "0, #{resource[:untagged_ports]}" == uports
+        "0, #{resource[:untagged_ports]}" == u_ports
         return resource[:untagged_ports]
       end
     end

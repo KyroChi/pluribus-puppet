@@ -27,12 +27,13 @@ Puppet::Type.newtype(:pn_lag) do
 Properties
 
 name sets the trunk name. This is the type's namevar and is required. This can
-be any string as long as it only contains letters, numbers, _, ., :, and -.
+be any string as long as it only contains `letters`, `numbers`, `_`, `.`, `:`,
+and `-`.
 
-ensure tells Puppet how to manage the trunk. Ensuring present will mean that the
-trunk will be created and present on the switch after a completed catalog run.
-Setting this to absent will ensure that the trunk is not present on the system
-after the catalog run.
+ensure tells Puppet how to manage the trunk. Ensuring `present` will mean that
+the trunk will be created and present on the switch after a completed catalog
+run. Setting this to `absent` will ensure that the trunk is not present on the
+system after the catalog run.
 
 switch is the name of the switch where the link aggregation will occur. This
 should be a switch that is both on the same network as the Puppet agent and the
@@ -45,15 +46,15 @@ list, no whitespace, and port ranges are allowed.
 Example Implementation
 
 The following example shows how to create trunks between two clusters. The first
-cluster is called spine-cluster and contains the two nodes spine-01 and
-spine-02. The second cluster is called leaf-cluster and contains the two nodes
-leaf-01 and leaf-02. spine-01 is connected to leaf-01 on ports 11 and 12, and
-connected to leaf-02 on 13 and 14. spine-02 is connected to leaf-01 on ports
-15 and 16, and connected to leaf-02 on 17 and 18. The leaf to spine ports are
-the same numbers for the leaves.
+cluster is called `spine-cluster` and contains the two nodes `spine-01` and
+`spine-02`. The second cluster is called `leaf-cluster` and contains the two
+nodes `leaf-01` and `leaf-02`. `spine-01` is connected to `leaf-01` on ports 11
+and 12, and connected to `leaf-02` on 13 and 14. `spine-02` is connected to
+`leaf-01` on ports 15 and 16, and connected to `leaf-02` on 17 and 18. The leaf
+to spine ports are the same numbers for the leaves.
 
 CLI:
-
+```
 CLI (...) > switch spine-01 trunk-create name spine01-to-leaf ports 11,12,13,14
 Created trunk spine01-to-leaf, id <id>
 CLI (...) > switch spine-02 trunk-create name spine02-to-leaf ports 15,16,17,18
@@ -62,8 +63,10 @@ CLI (...) > switch leaf-01 trunk-create name leaf01-to-spine ports 11,12,15,16
 Created trunk leaf01-to-spine, id <id>
 CLI (...) > switch leaf-02 trunk-create name leaf02-to-spine ports 13,14,17,18
 Created trunk leaf02-to-spine, id <id>
-Puppet:
+```
 
+Puppet:
+```puppet
 node your-pluribus-switch {
 
     pn_lag { 'spine01-to-leaf':

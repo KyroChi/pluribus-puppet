@@ -26,35 +26,37 @@ Properties
 
 id is the vLAN id, this can be any number between 2 and 4092.
 
-ensure tells Puppet how to manage the vLAN. Ensuring present will mean that the
+ensure tells Puppet how to manage the vLAN. Ensuring `present` will mean that the
 vLAN will be created and present on the switch after a completed catalog run.
-Setting this to absent will ensure that the vLAN is not present on the system
+Setting this to `absent` will ensure that the vLAN is not present on the system
 after the catalog run.
 
 scope is the name of the vNET assigned to the vRouter.
 
-description is the description of the vLAN. Can only contain letters, numbers,
-_, ., :, and -. The default value is ''.
+description is the description of the vLAN. Can only contain `letters`,
+`numbers`, `_`, `.`, `:`, and `-`. The default value is `'-'`.
 
 ports is a comma separated list of ports that the vLAN will use. There cannot be
 any whitespace separating the ports, ranges are allowed. The default value is
-'none'
+`'none'`
 
 untagged_ports is a comma separated list of untagged ports that the vLAN will
-use. There cannot be any whitespace separating the ports, ranges are allowed.
-The default value is 'none'
+use. There cannot be any whitespace separating the ports, ranges are allowed. The
+default value is `'none'`
+
+switch the switch where the vRouter will live, this can be the name of any switch
+on the fabric. By default this value is set to `local` and creates a vRouter on
+whatever node is specified in the manifest.
 
 Example Implementation
 
 CLI:
-
 ```
 CLI (...) > vlan-create id 101 scope fabric description puppet-vlan ports none
 untagged-ports none
 ```
 
 Puppet:
-
 ```puppet
 pn_vlan { '101':
     ensure         => present,
@@ -62,7 +64,8 @@ pn_vlan { '101':
     description    => 'puppet-vlan',
     ports          => 'none',
     untagged_ports => 'none',
-}```"
+}
+```"
 
   ensurable
   switch()
