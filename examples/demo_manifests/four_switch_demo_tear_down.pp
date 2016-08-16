@@ -119,15 +119,15 @@ pn_vlag { 'spine-to-leaf':
   mode      => active,
 }
 
-pn_vlag { 'leafcluster-to-spinecluster':
-  before   => Pn_lag['leaf1-to-spine', 'leaf2-to-spine'],
-  ensure    => absent,
-  cluster   => 'leafcluster',
-  port      => 'leaf1-to-spine',
-  peer_port => 'leaf2-to-spine',
-  mode      => active,
-  switch    => 'pikachu',
-}
+# pn_vlag { 'leafcluster-to-spinecluster':
+#   before   => Pn_lag['leaf1-to-spine', 'leaf2-to-spine'],
+#   ensure    => absent,
+#   cluster   => 'leafcluster',
+#   port      => 'leaf1-to-spine',
+#   peer_port => 'leaf2-to-spine',
+#   mode      => active,
+#   switch    => 'pikachu',
+# }
 
 pn_vlag { 'spine-to-leaf3':
   before   => Pn_lag['spine1-to-leaf3', 'spine2-to-leaf3'],
@@ -196,7 +196,7 @@ pn_vrouter { 'spine2vrouter':
 Integer[101, 105].each | $i | {
 
   pn_vrouter_if { "spine1vrouter ${i}.${i}.${i}.2/24":
-    before       => Pn_vrouter['spine1vrouter'],
+    before        => Pn_vrouter['spine1vrouter'],
     vlan          => "${i}",
     ensure        => absent,
     vrrp_ip       => "${i}.${i}.${i}.1/24",
@@ -209,7 +209,7 @@ Integer[101, 105].each | $i | {
 Integer[101, 105].each | $i | {
 
   pn_vrouter_if { "spine2vrouter ${i}.${i}.${i}.4/24":
-    before       => Pn_vrouter['spine2vrouter'],
+    before        => Pn_vrouter['spine2vrouter'],
     vlan          => "${i}",
     ensure        => absent,
     vrrp_ip       => "${i}.${i}.${i}.3/24",

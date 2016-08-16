@@ -48,9 +48,11 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
     vlag_props = {}
     vlag_props[:ensure]                = :present
     vlag_props[:provider]              = :netvisor
-    vlag_props[:name]                  = vlag.split('%')[1]
-    vlag_props[:cluster]               = vlag.split('%')[2]
-    vlag_props[:mode]                  = vlag.split('%')[3] == 'active-active' \
+    vlag_props[:switch]                = vlag.split('%')[0] == `hostname`.strip \
+                                         ? 'local' : vlag.split('%')[0]
+    vlag_props[:name]                  = vlag.split('%')[2]
+    vlag_props[:cluster]               = vlag.split('%')[3]
+    vlag_props[:mode]                  = vlag.split('%')[4] == 'active-active' \
                                           ? :active : :standby
     vlag_props[:port]                  = vlag.split('%')[5]
     vlag_props[:peer_port]             = vlag.split('%')[7]
@@ -95,8 +97,8 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
 
     cli(*splat_switch, 'vlag-create',
         'name', resource[:name],
-        'port', port,
-        'peer-port', peer_port,
+        'port', port.strip,
+        'peer-port', peer_port.strip,
         'mode', "active-#{resource[:mode]}",
         'peer-switch', @peer_switch,
         "failover-#{resource[:failover]}-L2",
@@ -110,11 +112,6 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
 
   def destroy
     cli(*splat_switch, 'vlag-delete', 'name', resource[:name])
-  end
-
-  def cluster=(value)
-    destroy
-    create
   end
 
   def port

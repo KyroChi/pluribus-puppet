@@ -16,7 +16,7 @@
 pn_vrouter { 'test-vrouter':
   ensure     => present,
   switch     => $SWITCH1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }

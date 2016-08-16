@@ -138,7 +138,7 @@ pn_vrouter { 'demo-vrouter':
   newproperty(:bgp_max_paths) do
     defaultto(:none)
     validate do |value|
-      unless value !~ /\d/
+      unless value =~ /\d/ or value == :none
         raise ArgumentError, "BGP max paths must be a number"
       end
     end

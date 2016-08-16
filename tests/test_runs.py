@@ -738,6 +738,24 @@ Manifest:
 
             self.message('debug', "Finished cleaning %s" % switch)
 
+    def ignore_host_error(self, error):
+        # ignore this error:
+        # Error: Facter: getaddrinfo failed: System error (-11): hostname may
+        # not be externally resolvable.
+        error = error.split("\n")
+        hostname_error = re.compile('.*System error \(\-11\)\: hostname.*')
+
+        for i in range(0, len(error) - 1):
+            if hostname_error.match(error[i]) is not None:
+                error[i] = ''
+
+        error = [x for x in error if x]
+
+        if error is not None:
+            error = "\n".join(error)
+
+        return error
+
     def wipe_puppet(self):
         """
         Wipe Puppet off of the switch too, this should be used for testing the
@@ -793,7 +811,7 @@ Manifest:
                 self.close_run()
                 (v, e, ex, cmd) = self.syscall(
                     'puppet apply --detailed-exitcodes run.pp', more=True)
-                if ex != 0 and ex != 2:
+                if (ex != 0 and ex != 2):
                     if not ignore_failures:
                         self.message('debug', "V: %s E: %s EX: %s CMD: %s" %
                                      (v, e, ex, cmd))
@@ -978,6 +996,8 @@ Manifest:
 
         ansi_escape = re.compile(r'\x1b[^m]*m')
         v = ansi_escape.sub('', v)
+
+        e = self.ignore_host_error(e)
 
         if not (e == '') or (ex != 0 and ex != 2):
             if expect:

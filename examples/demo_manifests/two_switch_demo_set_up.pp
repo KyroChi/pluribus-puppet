@@ -48,7 +48,7 @@ pn_vlag { 'ab-vlag':
 pn_vrouter { 'a-vrouter':
   require    => Pn_vlag['ab-vlag'],
   ensure     => present,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,
@@ -59,7 +59,7 @@ pn_vrouter { 'a-vrouter':
 pn_vrouter { 'b-vrouter':
   require    => Pn_vlag['ab-vlag'],
   ensure     => present,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,

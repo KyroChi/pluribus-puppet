@@ -123,7 +123,6 @@ Puppet::Type.type(:pn_vrouter_if).provide(:netvisor) do
     # nics to destroy
     nics = []
 
-    vlan = resource[:vlan]
     ip, mask = resource[:name].split(' ')[1].split('/')
 
     interface_ip = build_ip(1, ip, mask)

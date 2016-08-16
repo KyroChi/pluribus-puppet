@@ -49,8 +49,8 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
     vrouter_props[:router_id]        = vrouter[4]
     vrouter_props[:location]         = vrouter[5]
     vrouter_props[:service]          = vrouter[6] == 'enabled' ? :enable : :disable
-    vrouter_props[:bgp_redistribute] = vrouter[7]
-    vrouter_props[:bgp_max_paths]    = vrouter[8]
+    vrouter_props[:bgp_redistribute] = vrouter[7].nil? ? :none : vrouter[7]
+    vrouter_props[:bgp_max_paths]    = vrouter[8].nil? ? :none : vrouter[8]
     vrouter_props
   end
 
@@ -102,7 +102,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
   end
 
-  def destroy
+  def destroy)
     cli(*splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
 
@@ -166,7 +166,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def bgp_redistribute=(value)
-    cli(*splat_switch, 'vrouter-modify', resource[:name],
+    cli(*splat_switch, 'vrouter-modify', 'name', resource[:name],
         'bgp-redistribute', value)
   end
 
@@ -175,7 +175,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def bgp_max_paths=(value)
-    cli(*splat_switch, 'vrouter-modify', resource[:name],
+    cli(*splat_switch, 'vrouter-modify', 'name', resource[:name],
        'bgp-max-paths', value)
   end
 

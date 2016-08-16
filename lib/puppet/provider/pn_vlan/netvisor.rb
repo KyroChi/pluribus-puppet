@@ -76,21 +76,33 @@ Puppet::Type.type(:pn_vlan).provide(:netvisor) do
   end
 
   def destroy
-    if get_vlan_info(resource[:name], 'id')
-      switch = get_vlan_info(resource[:name], 'switch')
+    nics = []
+    out = cli('vrouter-interface-show', 'vlan',
+               resource[:name], 'format', 'nic', PDQ).split("\n")
 
-      nics = cli('vrouter-interface-show', 'vlan',
-                resource[:name], 'format', 'nic', PDQ).split("\n")
-
-      nics.sort.reverse.each do |nic|
-        nic = nic.split('%')
-        location = cli('vrouter-show', 'name', nic[0], 'format', 'location',
-                       PDQ).strip
-        out = cli('switch', location, 'vrouter-interface-remove',
-                  'vrouter-name', nic[0], 'nic', nic[1].strip)
-      end
-      cli(*splat_switch(switch), 'vlan-delete', 'id', resource[:name])
+    out.each do |o|
+      nics.push(o.split('%')[1].strip)
     end
+
+    nics_hash = {} # Sorts 9, 10 as 10, 9 :(
+
+    nics.each do |nic|
+      eth_num = /eth(\d*).\d*/.match(nic).captures
+      nics_hash[nic] = eth_num[0]
+    end
+
+    nics_hash.sort_by { |nic, eth| eth }
+
+    Hash[nics_hash.to_a.reverse].each do |key, value|
+
+      # Terrible way to do this, needs to be cleaned :S
+      vrouter = cli('vrouter-interface-show', 'nic',
+                key, 'format', 'nic', PDQ).split('%')[0]
+
+      cli(*splat_switch, 'vrouter-interface-remove', 'vrouter-name',
+          vrouter, 'nic', key)
+    end
+    cli(*splat_switch, 'vlan-delete', 'id', resource[:name])
   end
 
   def scope
