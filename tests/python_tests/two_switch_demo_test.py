@@ -21,9 +21,9 @@ def tests(runner):
     runner.auto_gen_tests(
         path='../../examples/demo_manifests/two_switch_demo_set_up.pp',
         post_cleaning=False)
-    runner.auto_gen_tests(
-        path='../../examples/demo_manifests/two_switch_demo_tear_down.pp')
-    runner.clean_setup()
+    #runner.auto_gen_tests(
+     #   path='../../examples/demo_manifests/two_switch_demo_tear_down.pp')
+    #runner.clean_setup()
 
 if __name__ == "__main__":
     SWITCH1 = 'charmander'

@@ -60,7 +60,7 @@ pn_vlan { '103':
 pn_vrouter { 'test-vrouter':
   require => Pn_vlan['103'],
   ensure => present,
-  vnet => 'puppet-ansible-fab-global',
+  vnet => 'no-fail-fab-global',
   hw_vrrp_id => 18,
 }
 

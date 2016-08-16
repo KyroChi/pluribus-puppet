@@ -16,7 +16,7 @@
 pn_vrouter { 'test-vrouter':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -25,7 +25,7 @@ pn_vrouter { 'test-vrouter':
 pn_vrouter { 'test-vrouter':
   ensure     => absent,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -34,7 +34,7 @@ pn_vrouter { 'test-vrouter':
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -42,7 +42,7 @@ pn_vrouter { 'test-vrouter-1':
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
   switch     => $switch2,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -51,7 +51,7 @@ pn_vrouter { 'test-vrouter-2':
 pn_vrouter { 'test-vrouter-1':
   ensure     => absent,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -59,7 +59,7 @@ pn_vrouter { 'test-vrouter-1':
 pn_vrouter { 'test-vrouter-2':
   ensure     => absent,
   switch     => $switch2,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -68,7 +68,7 @@ pn_vrouter { 'test-vrouter-2':
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
   switch     => $switch1',
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -76,7 +76,7 @@ pn_vrouter { 'test-vrouter-1':
 pn_vrouter { 'test-vrouter-2':
   ensure     => present,
   switch     => $switch2,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -85,7 +85,7 @@ pn_vrouter { 'test-vrouter-2':
 pn_vrouter { 'test vrouter 1':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -94,7 +94,7 @@ pn_vrouter { 'test vrouter 1':
 pn_vrouter { 'test-vrouter-fake':
   ensure     => present,
   switch     => 'dorado-tme-fake',
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -103,7 +103,7 @@ pn_vrouter { 'test-vrouter-fake':
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global-fake',
+  vnet       => 'no-fail-fab-global-fake',
   service    => 'enable',
   hw_vrrp_id => 18,
 }
@@ -112,7 +112,7 @@ pn_vrouter { 'test-vrouter-1':
 pn_vrouter { 'test-vrouter-1':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 'a',
 }
@@ -121,7 +121,7 @@ pn_vrouter { 'test-vrouter-1':
 pn_vrouter { 'test-vrouter':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -132,7 +132,7 @@ pn_vrouter { 'test-vrouter':
 pn_vrouter { 'test-vrouter':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
@@ -143,7 +143,7 @@ pn_vrouter { 'test-vrouter':
 pn_vrouter { 'test-vrouter-overwrite':
   ensure     => present,
   switch     => $switch1,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   service    => 'enable',
   hw_vrrp_id => 18,
   bgp_as     => 65000,
