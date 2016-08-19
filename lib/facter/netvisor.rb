@@ -12,50 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Puppet::Type.newtype(:pn_vrouter_vrrp) do
-
-  desc ''
-
-  ensurable
-
-  newparam(:vlan) do
-    isnamevar
-  end
-
-  newproperty(:switch) do
-    defaultto(:local)
-  end
-
-  newproperty(:vrouter) do
+Facter.add(:present_clusters) do
+  setcode do
 
   end
+end
 
-  newproperty(:ip) do
+Facter.add(:present_vrouter_interface) do
 
+end
+
+Facter.add(:present_vrouter) do
+  setcode do
   end
+end
 
-  newproperty(:mask) do
-
+Facter.add(:avaliable_vnets) do
+  setcode do
+    vnets = Facter::Core::Execution.exec(
+      'cli vnet-show format name parsable-delim %').split("\n")
+    vnets
   end
+end
 
-  newproperty(:if_type) do
-    defaultto(:data)
-    newvalues(:mgmt, :data, :span)
+Facter.add(:reachable_switches) do
+  setcode do
+    switches = Facter::Core::Execution.exec(
+      'cli fabric-node-show format name parsable-delim %').split("\n")
+    switches << 'local'
+    switches
   end
-
-  newproperty(:vrrp_id) do
-    # number between 0..255
-    defaultto('none')
-  end
-
-  newproperty(:primary_ip) do
-    # vrrp-primary | vrrp-primary-string
-    defaultto('none')
-  end
-
-  newproperty(:vrrp_priority) do
-    # number between 0..254
-    defaultto('none')
-  end
-
 end

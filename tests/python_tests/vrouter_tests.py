@@ -12,3 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+sys.path.append('../')
+from test_runs import TestRunner, Test
+
+def tests_two_nodes(runner):
+    runner.clean_setup()
+    runner.auto_gen_tests(path='../runs/pn_vrouter_runs.pp')
+    runner.clean_setup()
+
+if __name__ == "__main__":
+    SWITCH1 = 'charmander'
+    SWITCH2 = 'squirtle'
+    runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
+                    no_clean_on_entry=True)
+    tests_two_nodes(runner)
+    runner.end_tests()

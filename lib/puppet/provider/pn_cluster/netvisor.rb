@@ -54,8 +54,6 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
     end
   end
 
-  #
-  #
   def exists?
     check_nodes
     current_names = cli('--quiet', 'cluster-show', 'format', 'name',
@@ -98,8 +96,13 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
             (current_nodes[1] == resource[:nodes][0] and
                 current_nodes[0] == resource[:nodes][1])
           # Cluster is established but name is different than specified
-          fail("Cluster between #{current_nodes[0]} and #{current_nodes[1]}" +
-          " exists but is named #{name} instead of #{resource[:name]}")
+          cli('cluster-delete', 'name', name)
+          if resource[:ensure].to_s == 'present'
+            create
+            return true
+          else
+            return false
+          end
         else # TODO Nodes are in a different cluster
           # Has a different name and different nodes; do nothing
         end
@@ -108,24 +111,16 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
     return false
   end
 
-  # Always true, leave all error handling to exists?
   def name
+    # Always true, leave all error handling to exists?
     resource[:name]
   end
 
-  # Create a new cluster
-  #
   def create
     cli('cluster-create', 'name', resource[:name], 'cluster-node-1',
         resource[:nodes][0], 'cluster-node-2', resource[:nodes][1])
   end
 
-  # Destroy cluster if it exists and is ensured absent.
-  # This method is called by any thing that renames clusters as well because
-  # there is no Netvisor way to change cluster names on the fly.
-  #
-  # TODO implement for cluster name changes
-  #
   def destroy(name = resource[:name])
     clusters = cli('--quiet', 'vlag-show', 'format', 'cluster',
                    'no-show-headers').split("\n")
@@ -142,19 +137,13 @@ Puppet::Type.type(:pn_cluster).provide(:netvisor) do
     cli('cluster-delete', 'name', name)
   end
 
-  # Always return true, node re-assignment not allowed by provider. Because of
-  # this there is no setter for nodes.
-  # Use force_clustering to over-ride the current clustered nodes.
-  # @return true
-  #
   def nodes
+    # Always return true, handled in exists?
     resource[:nodes]
   end
 
-  # Always return true, not a verifiable attribute.
-  # @return true
-  #
   def force_clustering
+    # Always return true, not a verifiable attribute.
     resource[:force_clustering]
   end
 

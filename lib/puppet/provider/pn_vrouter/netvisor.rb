@@ -13,80 +13,97 @@
 # limitations under the License.
 
 require File.expand_path(
-File.join(File.dirname(__FILE__),
-         '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
+    File.join(File.dirname(__FILE__),
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
-
-  # Don't pre-fetch as there are too many instances to query and they are not
-  # guaranteed to have unique identifiers across nodes.
 
   desc 'Provider: Netvisor'
 
   commands :cli => 'cli'
 
-  # def self.getvrouters
-  #   vrouters = cli('--quiet', 'vrouter-show', 'format', 'name,',
-  #                  'no-show-headers').split("\n")
-  #   vrouters.each do |v|
-  #     v.strip!
-  #   end
-  #   vrouters
-  # end
-  #
-  # def self.instances
-  #   vrouters = []
-  #   getvrouters.each do |v|
-  #     vrouters.push(v)
-  #   end
-  #   vrouters
-  # end
-  #
-  # def self.prefetch(resources)
-  #   vrouters = instances
-  #   vrouters.each do |name|
-  #     provider = vrouters.find { |v| v == name }
-  #     resources[name].provider = provider unless provider.nil?
-  #   end
-  # end
-
-  #
-  # Chomps and strip!s output before returning it.
-  # @return: A string containing the requested information.
-  #
-  def get_vrouter_info(format, name="#{resource[:name]}")
-    cli('--quiet', *@H.splat_switch, 'vrouter-show', 'name', name,
-        'format', format, 'no-show-headers').strip
+  def self.instances
+    get_vrouters.collect do |vrouter|
+      vrouter_props = get_vrouter_props(vrouter)
+      new(vrouter_props)
+    end
   end
 
-  #
-  #
+  def self.get_vrouters
+    cli('vrouter-show', 'format',
+        'name,vnet,hw-vrrp-id,bgp-as,router-id,location,state,' +
+        'bgp-redistribute,bgp-max-paths', PDQ).split("\n")
+  end
+
+  def self.get_vrouter_props(vrouter)
+    vrouter_props = {}
+    vrouter = vrouter.split('%')
+    vrouter_props[:ensure]           = :present
+    vrouter_props[:provider]         = :netvisor
+    vrouter_props[:name]             = vrouter[0]
+    vrouter_props[:vnet]             = vrouter[1]
+    vrouter_props[:hw_vrrp_id]       = vrouter[2]
+    vrouter_props[:bgp_as]           = vrouter[3]
+    vrouter_props[:router_id]        = vrouter[4]
+    vrouter_props[:location]         = vrouter[5]
+    vrouter_props[:service]          = vrouter[6] == 'enabled' ? :enable : :disable
+    vrouter_props[:bgp_redistribute] = vrouter[7].nil? ? :none : vrouter[7]
+    vrouter_props[:bgp_max_paths]    = vrouter[8].nil? ? :none : vrouter[8]
+    vrouter_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
+      end
+    end
+  end
+
   def exists?
-    # check that the vnet is correct
-    @H = PuppetX::Pluribus::PnHelper.new(resource)
-    if get_vrouter_info('name') != ''
-      return true
-    end
-    false
+    @property_hash[:ensure] == :present
   end
 
-  #
-  #
   def create
-    cli('--quiet', *@H.splat_switch, 'vrouter-create',
-        'name', resource[:name], 'vnet', resource[:vnet],
-        'hw-vrrp-id', resource[:hw_vrrp_id],
-        resource[:service])
-    if resource[:bgp_as] != ''
-      cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-          'name', resource[:name], 'bgp-as', resource[:bgp_as])
+
+    vrouter = resource[:name]
+
+    vrouters = cli('vrouter-show', 'format', 'name', PDQ).split("\n")
+    locations = cli('vrouter-show', 'format', 'location', PDQ).split("\n")
+
+    unless vrouters.include? vrouter
+      if locations.include? switch_location
+        vrouter = cli('vrouter-show', 'location', switch_location, 'format',
+                      'name', PDQ).strip
+        cli(*splat_switch, 'vrouter-delete', 'name', vrouter)
+      end
     end
+
+    out = cli('--quiet', *splat_switch, 'vrouter-create',
+              'name', resource[:name], 'vnet', resource[:vnet],
+              'hw-vrrp-id', resource[:hw_vrrp_id],
+              resource[:service])
+
+    if out =~ /not the name of a switch/
+      # Can't belive I have to do this check
+      fail('Switch does not exist')
+    end
+
+    if resource[:bgp_as] != :none
+      cli('vrouter-modify', 'name', resource[:name], 'bgp-as', resource[:bgp_as])
+    end
+
+    if resource[:router_id] != :none
+      cli('vrouter-modify', 'name', resource[:name],
+          'router-id', resource[:router_id])
+    end
+
   end
 
-  #
-  #
   def destroy
-    cli('--quiet', *@H.splat_switch, 'vrouter-delete', 'name', resource[:name])
+    cli(*splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
 
   def switch
@@ -94,41 +111,72 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
   end
 
   def vnet
-    get_vrouter_info('vnet')
+    @property_hash[:vnet]
   end
 
   def vnet=(value)
-
+    destroy
+    create
   end
 
   def hw_vrrp_id
-    get_vrouter_info('hw-vrrp-id')
+    @property_hash[:hw_vrrp_id]
   end
 
-  def hw_vrrp_ip=(value)
+  def hw_vrrp_id=(value)
     destroy
     create
   end
 
   def service
-    if get_vrouter_info('state') == 'enabled'
-      return :enable
-    end
-    return :disable
+    @property_hash[:service]
   end
 
   def service=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-        'name', resource[:name], value)
+    cli(*splat_switch, 'vrouter-modify',
+        'name', resource[:name], value, Q)
   end
 
   def bgp_as
-    get_vrouter_info('bgp-as')
+    if resource[:bgp_as] == :none
+      return resource[:bgp_as]
+    end
+    @property_hash[:bgp_as]
   end
 
   def bgp_as=(value)
-    cli('--quiet', *@H.splat_switch, 'vrouter-modify',
-        'name', resource[:name], 'bgp-as', value)
+    cli(*splat_switch, 'vrouter-modify',
+        'name', resource[:name], 'bgp-as', value, Q)
+  end
+
+  def router_id;
+    if resource[:router_id] == :none
+      return resource[:router_id]
+    end
+    @property_hash[:router_id]
+  end
+
+  def router_id=(value)
+    cli('--quiet', *splat_switch, 'vrouter-modify',
+        'name', resource[:name], 'router-id', value)
+  end
+
+  def bgp_redistribute
+    @property_hash[:bgp_redistribute]
+  end
+
+  def bgp_redistribute=(value)
+    cli(*splat_switch, 'vrouter-modify', 'name', resource[:name],
+        'bgp-redistribute', value)
+  end
+
+  def bgp_max_paths
+    @property_hash[:bgp_max_paths]
+  end
+
+  def bgp_max_paths=(value)
+    cli(*splat_switch, 'vrouter-modify', 'name', resource[:name],
+       'bgp-max-paths', value)
   end
 
 end

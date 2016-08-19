@@ -14,179 +14,162 @@
 
 require File.expand_path(
     File.join(File.dirname(__FILE__),
-              '..', '..', '..', 'puppet_x', 'pn', 'pn_helper.rb'))
+              '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
 
 Puppet::Type.type(:pn_vlan).provide(:netvisor) do
 
-  # Don't pre-fetch instances, on systems with established VLAN networks this
-  # will cause puppet to spend ~2 seconds per VLAN and on systems with 100s or
-  # 1000s of VLANs this will be prohibitively bloated
-
   commands :cli => 'cli'
 
-  # Query Netvisor for information about a specific VLAN. This is a helper
-  # method that can be called instead of using Puppet pre-fetching to generate a
-  # property_hash.
-  # @param id: The id of the VLAN you are requesting information from.
-  # @param format: The format string to be passed to the cli.
-  # @return: A string containing the response from Netvisor. Returns nothing if
-  #    no values where found.
-  #
   def get_vlan_info(id, format)
-    info = cli('--quiet', 'vlan-show', 'id', id, 'format', format,
-               'no-show-headers').split("\n")
+      info = cli(Q, 'vlan-show', 'id', id, 'format', format,
+                 'no-show-headers').split("\n")
     if info[0]
-      info[0].strip!
+      return info[0].strip
+    end
+    return nil
+  end
+
+  def self.instances
+    get_vlans.collect do |vlan|
+      vlan_props = get_vlan_props(vlan)
+      new(vlan_props)
     end
   end
 
-  # Checks that the resource is present on the queried system. If the resource
-  # is not on the switch, Netvisor will return '' which can be checked for by
-  # exists?
-  # @return: true if resource is present, false otherwise
-  #
-  def exists?
-    @H = PuppetX::Pluribus::PnHelper.new(resource)
-    @ids = @H.deconstruct_range
-    for id in @ids do
-      unless get_vlan_info(id, 'id')
-        return false
+  def self.get_vlans
+    cli('vlan-show', 'format',
+        'id,scope,description,ports,untagged-ports,stats', PDQ).split("\n")
+  end
+
+  def self.get_vlan_props(vlan)
+    vlan_props = {}
+    vlan = vlan.split('%')
+    vlan_props[:ensure]         = :present
+    vlan_props[:provipder]      = :netvisor
+    vlan_props[:name]           = vlan[0]
+    vlan_props[:scope]          = vlan[1]
+    vlan_props[:description]    = vlan[2]
+    vlan_props[:ports]          = vlan[3]
+    vlan_props[:untagged_ports] = vlan[4]
+    vlan_props[:stats]          = vlan[5]
+    vlan_props
+  end
+
+  def self.prefetch(resources)
+    instances.each do |provider|
+      if resource = resources[provider.name]
+        resource.provider = provider
       end
     end
-    true
   end
 
-  #
-  #
-  #
+  def exists?
+    @property_hash[:ensure] == :present
+  end
+
   def create
-    for id in @ids do
-      cli('vlan-create', 'id', id, 'scope', resource[:scope],
-          'ports', resource[:ports], 'description', resource[:description])
-    end
+    cli(*splat_switch, 'vlan-create', 'id', resource[:name], 'scope',
+        resource[:scope], 'ports', resource[:ports], 'description',
+        resource[:description])
   end
 
-  #
-  #
-  #
   def destroy
-    for id in @ids do
-      cli('vlan-delete', 'id', id)
+    nics = []
+    out = cli('vrouter-interface-show', 'vlan',
+               resource[:name], 'format', 'nic', PDQ).split("\n")
+
+    out.each do |o|
+      nics.push(o.split('%')[1].strip)
     end
+
+    nics_hash = {} # Sorts 9, 10 as 10, 9 :(
+
+    nics.each do |nic|
+      eth_num = /eth(\d*).\d*/.match(nic).captures
+      nics_hash[nic] = eth_num[0]
+    end
+
+    nics_hash.sort_by { |nic, eth| eth }
+
+    Hash[nics_hash.to_a.reverse].each do |key, value|
+
+      # Terrible way to do this, needs to be cleaned :S
+      vrouter = cli('vrouter-interface-show', 'nic',
+                key, 'format', 'nic', PDQ).split('%')[0]
+
+      cli(*splat_switch, 'vrouter-interface-remove', 'vrouter-name',
+          vrouter, 'nic', key)
+    end
+    cli(*splat_switch, 'vlan-delete', 'id', resource[:name])
   end
 
   def scope
-    for id in @ids do
-      if get_vlan_info(id, 'scope') != resource[:scope]
-        return "Incorrect Scope"
-      end
-    end
-    resource[:scope]
+    @property_hash[:scope]
   end
 
-  # Sets the scope of the queried resource. Since scope is not modifiable by the
-  # CLI, we must destroy the VLAN and re-create it. This gives the end-user the
-  # ability to easily change VLAN scope without manually re-creating the VLANs
-  # @param value: un-used, can be ignored but not removed.
-  #
   def scope=(value)
     destroy
     create
   end
 
-  # Checks the current state of the VLAN description on the switch.
-  # @return: The current state of the VLAN's description.
-  #
   def description
-    for id in @ids do
-      if get_vlan_info(id, 'description') != resource[:description]
-        return "Incorrect Description"
-      end
-    end
-    resource[:description]
+    @property_hash[:description]
   end
 
-  # Sets the desired description for the VLAN that has been specified. Because
-  # we can change the description from the cli, there is no reason to destroy
-  # and recreate description when we need to change the value.
-  # @param value: The value of the new description, this will be filled in by
-  #    Puppet.
-  #
   def description=(value)
-    for id in @ids do
-      cli('vlan-modify', 'id', id, 'description', value)
-    end
-  end
-
-  # Checks if the VLANs statistics are enabled.
-  # @return: :enable if stats are enabled, :disable otherwise.
-  #
-  def stats
-    if get_vlan_info(@ids[0], 'stats') == 'yes'
-      :enable
+    if get_vlan_info(resource[:name], 'switch') != resource[:switch]
+      cli(*splat_switch(get_vlan_info(resource[:name], 'switch')), 'vlan-modify',
+          'id', resource[:name], 'description', value)
     else
-      :disable
+      cli(*splat_switch, 'vlan-modify', 'id', resource[:name], 'description',
+          value)
     end
   end
 
-  #
-  #
-  #
-  def stats=(value)
-    cli('--quiet', 'vlan-stats-settings-modify', value)
-  end
-
-  #
-  #
-  #
   def ports
-    for id in @ids do
-      if get_vlan_info(id, 'ports') == '0'
-        if resource[:ports] != 'none'
-          return "Incorrect Ports"
-        end
-      else
-        if get_vlan_info(id, 'ports') != resource[:ports]
-          return "Incorrect Ports"
-        end
+    actual_ports = @property_hash[:ports]
+    if actual_ports == '0'
+      if resource[:ports] == 'none'
+        return resource[:ports]
+      end
+    else
+      if actual_ports == resource[:ports] or
+        "0,#{resource[:ports]}" == actual_ports
+        return resource[:ports]
       end
     end
-    resource[:ports]
+    actual_ports
   end
 
-  #
-  #
-  #
   def ports=(value)
     destroy
     create
   end
 
-  #
-  #
-  #
   def untagged_ports
-    for id in @ids do
-      u_ports = get_vlan_info(id, 'untagged-ports')
-      if u_ports == 'none' or u_ports == ''
-        if resource[:untagged_ports] != :none
-          "Incorrect Untagged Ports"
-        end
-      else
-        if resource[:untagged_ports] != u_ports
-          "Incorrect Untagged Ports"
-        end
+    u_ports = @property_hash[:untagged_ports]
+    if u_ports == 'none' or u_ports == ''
+      if resource[:untagged_ports] == :none
+        return resource[:untagged_ports]
+      end
+    else
+      if resource[:untagged_ports] == u_ports or
+        "0, #{resource[:untagged_ports]}" == u_ports
+        return resource[:untagged_ports]
       end
     end
-    resource[:untagged_ports]
+    u_ports
   end
 
-  #
-  #
-  #
   def untagged_ports=(value)
     destroy
     create
+  end
+
+  def switch
+    resource[:switch]
   end
 
 end

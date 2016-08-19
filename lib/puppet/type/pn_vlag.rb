@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vlag) do
 
   # DON'T need to make twice for each cluster, switch and peer-switch
@@ -19,107 +25,105 @@ Puppet::Type.newtype(:pn_vlag) do
   # Do serious error handling in the Provider instead so that the switch can be
   # queried during error checking.
 
-  @doc = "Manage VLAGs
+  @doc = "Allow management of vLAGs. You must have LAGs/trunks in place on the
+switches in a vLAG prior to declaring the vLAG.
 
-~~~puppet
-pn_vlag { '<name>':
-    ensure => present,
-    switch => <switch-name>,
-    peer_switch => <peer-switch-name>,
-    port => <vlag-port>,
-    peer_port => <peer-port>,
-    mode => <active|standby>,
-    failover => <move|ignore>,
-    lacp_mode => <off|passive|active>,
-    lacp_timeout => <fast|slow>,
-    lacp_fallback => <bundle|individual>,
-    lacp_fallback_timeout => <30..60>
+Properties
+
+name sets the vLAG name. This is the type's namevar and is required. This can
+be any string as long as it only contains `letters`, `numbers`, `_`, `.`, `:`,
+and `-`.
+
+ensure tells Puppet how to manage the vLAG. Ensuring `present` will mean that
+the vLAG will be created and present on the switch after a completed catalog run.
+Setting this to `absent` will ensure that the vLAG is not present on the system
+after the catalog run.
+
+cluster tells Puppet which cluster the vLAG should be applied to.
+
+port is the vLAG port on `switch`.
+
+peer-port is the vLAG port on `peer-switch`.
+
+mode the vLAG mode. Can either be set to `active` or `standby`, corresponding to
+`active-active` and `active-standby` vLAG modes respectively. This property
+defaults to `active`.
+
+failover is how L2 failover will be handled by the vLAG. This can either be
+specified as `move` or `ignore`. The default value for this property is `move`.
+
+lacp_mode controls the link aggregation control protocol mode. This can be either
+`active`, `passive` or `off`. The default value is `active`.
+
+lacp_timeout sets the type of LACP timeout. This can be set to either `fast` or
+`slow`. The default setting is `fast`.
+
+lacp_fallback sets the fallback type of the LACP connection. This can be set to
+either `bundle` or `individual`. By default, this value is set to `bundle`.
+
+lacp_fallback_timeout sets the fallback timeout in seconds. This can be any
+integer between `30` and `60`. By default the fallback timeout is set to `50`
+seconds.
+
+Example Implementation
+
+The following example shows how to create trunks between two clusters. The
+first cluster is called `spine-cluster` and contains the two nodes `spine-01`
+and `spine-02`. The second cluster is called `leaf-cluster` and contains the two
+nodes `leaf-01` and `leaf-02`. `spine-01` is connected to `leaf-01` on ports 11
+and 12, and connected to `leaf-02` on 13 and 14. `spine-02` is connected to
+`leaf-01` on ports 15 and 16, and connected to `leaf-02` on 17 and 18. The leaf
+to spine ports are the same numbers for the leaves.
+
+CLI:
+```
+CLI (...) > cluster-create name spine-cluster ...
+CLI (...) > trunk-create name spine01-to-leaf ...
+Created trunk spine02-to-leaf, id <#>
+CLI (...) > trunk-create name spine02-to-leaf ...
+Created trunk spine02-to-leaf, id <#>
+CLI (...) > switch spine-01 vlag-create name spine-to-leaf port spine01-to-leaf
+peer-switch spine02 peer-port leaf2-to-spine mode active-active
+failover-ignore-L2 lacp-mode slow lacp-fallback bundle lacp-fallback-timeout 45
+```
+
+Puppet:
+```puppet
+pn_cluster { 'spine-cluster':
+            ...
 }
-~~~
 
-name: The name of the VLAG to be created.  No default, this is a required
-  parameter.
-
-ensure: Should the VLAG be present or absent.  No default, this is a required
-  parameter.
-
-switch: The name of the switch where the VLAG will live.  No default, this is a
-  required parameter.
-
-peer-switch: The name of the peer-switch (same cluster) on the VLAG.  No
-  default, this is a required parameter.
-
-  NOTE: The VLAG only needs to be specified once for the switch and its peer
-
-port: The port on the switch to connect the VLAG.  No default, this is a
-  required parameter.
-
-peer-port: The port on the peer-switch to connect the VLAG. No default, this is
-  a required parameter.
-
-mode: active for active-active mode, passive for active-passive mode. Default is
-  active.
-
-failover: Choose between move (failover-move-L2) and ignore
-  (failover-ignore-L2). Default is move.
-
-lacp_mode: The lacp mode of the VLAG, can be active, passive or off. Default is
-  off.
-
-lacp_timeout: The lacp timeout of the VLAG, can be either fast or slow. Default
-  is fast.
-
-lacp_fallback: The VLAG's lacp fallback mode. Can be bundle (bundled fallback)
-  or individual. The default is bundle.
-
-lacp_fallback_timeout: The lacp fallback timeout in seconds. Can be between 30
-  and 60. The default is 50.
-
-Switch and peer-switch must already be part of a cluster before creating a VLAG.
-
-Example:
-~~~puppet
-node puppet-agent.pluribusnetworks.com {
-    pn_cluster { 'spine1-spine2':
-        ensure => present,
-        nodes => ['onvlspine1', 'onvlspine2']
-    }
-    pn_vlag { 'spine-to-leaf3':
-        ensure => present,
-        switch => onlvspine1,
-        peer_switch => onvlspine2,
-        port => spine1-to-leaf3,
-        peer_port => spine2-to-leaf3,
-        mode => active,
-        failover => move,
-        lacp_mode => passive,
-        lacp_timeout => fast,
-        lacp_fallback => bundle,
-        lacp_fallback_timeout => 31
-    }
-    pn_vlag { 'spine-to-leaf4':
-        ensure => present,
-        switch => onlvspine1,
-        peer_switch => onvlspine2,
-        port => spine1-to-leaf4,
-        peer_port => spine2-to-leaf4,
-        mode => active,
-        failover => move,
-        lacp_mode => passive,
-        lacp_timeout => fast,
-        lacp_fallback => bundle,
-        lacp_fallback_timeout => 31
-    }
+pn_lag { 'spine01-to-leaf':
+            ...
+    require => Pn_cluster['spine-cluster']
 }
-~~~"
+
+pn_lag { 'spine02-to-leaf':
+            ...
+    require => Pn_cluster['spine-cluster']
+}
+
+pn_vlag { 'spine-to-leafs':
+    ensure                => present,
+    cluster               => 'spine-cluster',
+    port                  => 'spine01-to-leaf',
+    peer-port             => 'spine02-to-leaf',
+    mode                  => active,
+    failover              => ignore,
+    lacp_mode             => active,
+    lacp_timeout          => slow,
+    lacp_fallback         => bundle,
+    lacp_fallback_timeout => 45,
+    require               => Pn_lag['spine01-to-leaf',
+                                    'spine02-to-leaf'],
+}
+````"
 
   ensurable
+  switch()
 
-  # The name of the vlan. Must follow the cli naming rules; can only contain
-  # letters, numbers, _, ., :, and -
-  #
-  newparam(:name, :namevar => true) do
-    desc "VLAN name"
+  newparam(:name) do
+    desc "vLAG name"
     validate do |value|
       if value =~ /[^\w.:-]/
         raise ArgumentError, 'VLAG name can only contain letters, numbers, ' +
@@ -128,37 +132,15 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-  # The name of one of the switches in the VLAN. switch and peer-switch are
-  # technically interchangeable. As long as they are in a cluster the VLAG
-  # should be created.
-  #
-  newproperty(:switch) do
-    desc "Name of the switch where the VLAG will be created. Must be on the" +
-             ' same fabric as the Puppet Agent.'
+  newproperty(:cluster) do
+    desc "Name of the cluster whose two switches will be included in the vLAG"
     validate do |value|
       if value =~ /[^\w.:-]/
-        raise ArgumentError, "Invalid switch name #{value}"
+        raise ArgumentError, "Invalid cluster name #{value}"
       end
     end
   end
 
-  # The name of the peer-switch in the cluster. This switch is the VLAG peer of
-  # switch. It must be in the same cluster and as such on the same fabric.
-  #
-  newproperty(:peer_switch) do
-    desc "Name of the peer-switch where the VLAG will be created. Must be on " +
-             'the same fabric as the Puppet Agent.'
-    validate do |value|
-      if value =~ /\s/
-        raise ArgumentError, "Invalid peer-switch name #{value}"
-      end
-    end
-  end
-
-  # The port on the switch where the VLAN will be created. This should be a name
-  # preferably describing the VLAG being created. Can only contain letters,
-  # numbers, _, ., :, and -
-  #
   newproperty(:port) do
     desc "Name of the port where the VLAG will be created."
     validate do |value|
@@ -168,10 +150,6 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-  # The port on the peer switch where the VLAN will be created. Must follow the
-  # cli naming guidelines and should describe the VLAG being created. Can only
-  # contain letters, numbers, _, ., :, and -
-  #
   newproperty(:peer_port) do
     desc "Name of the port on the peer-switch where the VLAG will be created."
     validate do |value|
@@ -181,53 +159,36 @@ node puppet-agent.pluribusnetworks.com {
     end
   end
 
-
-  # The vlag mode. The modes active-active and active-standby on the cli are
-  # notated by active and standby respectively.
-  #
   newproperty(:mode) do
     desc "The VLAG mode, can be either active or standby."
     defaultto(:active)
     newvalues(:active, :standby)
   end
 
-  # The L2 failover mode. This can either be move (failover-move-L2) or ignore
-  # (failover-ignore-L2).
-  #
   newproperty(:failover) do
     desc "The L2 failover type, can either be move or ignore."
     defaultto(:move)
     newvalues(:move, :ignore)
   end
 
-  # The lacp mode. Can be set to off, passive or active.
-  #
   newproperty(:lacp_mode) do
     desc "The VLAGs lacp mode, can be off, passive or active."
     defaultto(:active)
     newvalues(:off, :passive, :active)
   end
 
-  # Choose a lacp timeout for the VLAG, can be either fast (:fast) or slow
-  # (:slow). This property's default value is :fast.
-  #
   newproperty(:lacp_timeout) do
     desc "The lacp timeout can either be fast or slow."
     defaultto(:fast)
     newvalues(:slow, :fast)
   end
 
-  # Choose lacp fallback mode. This can be either bundled (:bundle) or
-  # individual (:individual). This property's default value is :bundle.
-  #
   newproperty(:lacp_fallback) do
     desc "The lacp fallback, can be bundle or individual."
     defaultto(:bundle)
     newvalues(:bundle, :individual)
   end
 
-  # The timeout in seconds for lacp fallback. Must be a number between 30 and 60
-  #
   newproperty(:lacp_fallback_timeout) do
     desc "The lacp fallback timeout in seconds."
     defaultto('50')

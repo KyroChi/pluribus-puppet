@@ -29,7 +29,8 @@ module PuppetX
       # Global variable to store the resource hash pulled from the provider
       @resource
 
-      # Splat to include 'parsable-delim %' and '--quiet'
+      # Splat to include 'parsable-delim %' and '--quiet', make sure this is the
+      # final argument passed to the cli
       def pdq
         ['parsable-delim', '%', q]
       end
@@ -44,7 +45,7 @@ module PuppetX
       # resource hash as if these methods were declared inside of the provider.
       # @param resources: The resource hash from the provider.
       #
-      def initialize(resources)
+      def initialize(resources={})
         @resource = resources
       end
 
@@ -123,7 +124,8 @@ module PuppetX
       #     vlan specified in the manifest file.
       # @return: A string containing the nic.
       #
-      def get_nic(include_vlan=0, vrouter_name="#{@resource[:vrouter]}")
+      def get_nic(include_vlan=0, vrouter_name="#{@resource[:vrouter]}",
+                  ipin="#{resource[:ip]}", mask='24', vlan='101')
         cmd = "/usr/bin/cli --quiet #{current_switch} vrouter-interface-show " +
             "vrouter-name #{vrouter_name} format nic,ip " +
             "parsable-delim % no-show-headers"
@@ -131,7 +133,7 @@ module PuppetX
         out = `#{cmd}`
         out.split("\n").each do |interface|
           vrouter, nic, ip = interface.split('%')
-          if ip.strip == build_ip
+          if ip.strip == build_ip(0, ipin, mask, vlan)
             if include_vlan != 0
               return nic
             else
@@ -139,7 +141,7 @@ module PuppetX
             end
           end
         end
-        message("Couldn't find the specified vRouter interface.", 'fail')
+        ''
       end
 
       # Returns the cli switch accessor as a string.

@@ -12,35 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Puppet::Type.newtype(:pn_vrouter_ip) do
+import sys
+sys.path.append('../')
+from test_runs import TestRunner, Test
 
-  desc ''
+def tests_two_nodes(runner):
+    runner.clean_setup()
+    runner.auto_gen_tests(path='../runs/pn_vrouter_interface_runs.pp')
+    runner.clean_setup()
 
-  ensurable
-
-  newparam(:vlan) do
-    isnamevar
-  end
-
-  newproperty(:switch) do
-    defaultto(:local)
-  end
-
-  newproperty(:vrouter) do
-
-  end
-
-  newproperty(:ip) do
-
-  end
-
-  newproperty(:mask) do
-
-  end
-
-  newproperty(:if_type) do
-    defaultto(:data)
-    newvalues(:mgmt, :data, :span)
-  end
-
-end
+if __name__ == "__main__":
+    SWITCH1 = 'charmander'
+    SWITCH2 = 'squirtle'
+    runner = TestRunner([SWITCH1, SWITCH2], debugging=True, logging=False,
+                    no_clean_on_entry=True)
+    tests_two_nodes(runner)
+    runner.end_tests()

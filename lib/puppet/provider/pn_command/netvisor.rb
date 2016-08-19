@@ -11,23 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-pn_vlan { '1000':
-	ensure => absent,
-	description => "puppet-1000",
-	scope => 'local'
-	ports => 'none'
-}
 
-pn_vlan { '999':
-	ensure => absent,
-	ports => 'none',
-	scope => 'fabric',
-	description => 'puppet-999'
-}
+# Combine ip and vrrp interfaces and make it so that you can submit ranges
+# to the interface
 
-pn_vlan { '2':
-	ports => 'none',
-	ensure => absent,
-	scope => local,
-	description => puppet-2
-}
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', '..', 'puppet_x', 'pn', 'mixin_helper.rb'))
+
+include PuppetX::Pluribus::MixHelper
+
+Puppet::Type.type(:pn_command).provide(:netvisor) do
+
+  commands :cli => 'cli'
+
+  def exists?
+    false
+  end
+
+  def create
+    cli(resource[:name])
+  end
+
+end
