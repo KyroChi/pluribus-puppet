@@ -27,7 +27,9 @@ Puppet::Type.type(:pn_vrouter_loopback).provide(:netvisor) do
 
     if cli(*@H.splat_switch, 'vrouter-show', 'name',
            @vrouter, @H.q) == ''
-      fail('vRouter does not exist')
+      if resource[:ensure] == :present
+        fail('vRouter does not exist')
+      end
     end
 
     loopbacks = cli(*@H.splat_switch, 'vrouter-loopback-interface-show',

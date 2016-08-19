@@ -48,7 +48,7 @@ pn_vlag { 'ab-vlag':
 pn_vrouter { 'a-vrouter':
   require    => Pn_vlag['ab-vlag'],
   ensure     => present,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,
@@ -59,7 +59,7 @@ pn_vrouter { 'a-vrouter':
 pn_vrouter { 'b-vrouter':
   require    => Pn_vlag['ab-vlag'],
   ensure     => present,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,
@@ -95,24 +95,27 @@ pn_vlan { '201':
   description => 'created-with-puppet',
 }
 
-pn_vrouter_if { '105 105.105.105.2/24':
+pn_vrouter_if { 'a-vrouter 105.105.105.2/24':
   require => Pn_vlan['105'],
   ensure  => present,
   switch  => $switch1,
+  vlan    => '105',
 }
 
-pn_vrouter_if { '106 106.106.106.2/24':
+pn_vrouter_if { 'a-vrouter 106.106.106.2/24':
   require       => Pn_vlan['106'],
   ensure        => present,
   vrrp_ip       => '106.106.106.1/24',
   vrrp_priority => '110',
   switch        => $switch1,
+  vlan          => '106',
 }
 
-pn_vrouter_if { '105 105.105.105.4/24':
+pn_vrouter_if { 'b-vrouter 105.105.105.4/24':
   require => Pn_vlan['105'],
   ensure  => present,
   switch  => $switch2,
+  vlan    => '105',
 }
 
 pn_vrouter_bgp { 'a-vrouter 200.200.200.1':

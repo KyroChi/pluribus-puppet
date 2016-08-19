@@ -14,7 +14,7 @@
 
 # SETUP
 
-$vnet = 'puppet-ansible-fab-global'
+$vnet = 'no-fail-fab-global'
 
 pn_vrouter { 'bgp-test-vrouter-1':
   ensure     => present,

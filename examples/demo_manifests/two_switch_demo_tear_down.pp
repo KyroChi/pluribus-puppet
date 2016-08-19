@@ -48,7 +48,7 @@ pn_vlag { 'ab-vlag':
 pn_vrouter { 'a-vrouter':
   before    => Pn_vlag['ab-vlag'],
   ensure     => absent,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,
@@ -59,7 +59,7 @@ pn_vrouter { 'a-vrouter':
 pn_vrouter { 'b-vrouter':
   before    => Pn_vlag['ab-vlag'],
   ensure     => absent,
-  vnet       => 'puppet-ansible-fab-global',
+  vnet       => 'no-fail-fab-global',
   hw_vrrp_id => 18,
   service    => 'enable',
   bgp_as     => 65001,
@@ -96,13 +96,13 @@ pn_vlan { '201':
 }
 
 pn_vrouter_if { '105 105.105.105.2/24':
-  before => Pn_vlan['105'],
+  before => [Pn_vlan['105'], Pn_vrouter['a-vrouter', 'b-vrouter']],
   ensure  => absent,
   switch  => $switch1,
 }
 
 pn_vrouter_if { '106 106.106.106.2/24':
-  before       => Pn_vlan['106'],
+  before       => [Pn_vlan['106'], Pn_vrouter['a-vrouter', 'b-vrouter']],
   ensure        => absent,
   vrrp_ip       => '106.106.106.1/24',
   vrrp_priority => '110',
@@ -110,19 +110,19 @@ pn_vrouter_if { '106 106.106.106.2/24':
 }
 
 pn_vrouter_if { '105 105.105.105.4/24':
-  before => Pn_vlan['105'],
+  before => [Pn_vlan['105'], Pn_vrouter['a-vrouter', 'b-vrouter']],
   ensure  => absent,
   switch  => $switch2,
 }
 
 pn_vrouter_bgp { 'a-vrouter 200.200.200.1':
-  before => Pn_vlan['200'],
+  before => [Pn_vlan['200'], Pn_vrouter['a-vrouter', 'b-vrouter']],
   ensure  => absent,
   bgp_as  => '65001'
 }
 
 pn_vrouter_bgp { 'b-vrouter 201.201.201.1':
-  before => Pn_vlan['201'],
+  before => [Pn_vlan['201'], Pn_vrouter['a-vrouter', 'b-vrouter']],
   ensure  => absent,
   bgp_as  => '65001'
 }

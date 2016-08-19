@@ -25,7 +25,7 @@ If you are familiar with the Puppet master-agent setup, you may be weary to setu
 
 If you are a Pluribus employee needing to quickly configure large networks for testing or demos, Puppet offers a quick and repeatable way to create network configurations. The nature of Puppet allows us to completely build, tear-down, and re-build the same setup over and over without worrying about missing a step or debugging a script.
  
- If you are a developer looking to contribute, or a new development team member, please visit the [developer page]().
+ If you are a developer looking to contribute, or a new development team member, please visit the [developer page](doc/developers.md).
 
 ## Module Description
 
@@ -33,13 +33,13 @@ This module allows for the management of Pluribus switches through the Puppet DS
 
 ## Setup
 
-To use Pluribus Puppet you must first install and configure a Puppet master server and a Pupept agent on one, all, or some of the switches in your fabric. A guide for installing the [Puppet Master](https://docs.puppet.com/puppetserver/2.4/install_from_packages.html) and one for installing the [Puppet Agent](https://docs.puppet.com/puppet/latest/reference/install_linux.html).
+To use Pluribus Puppet you must first install and configure a Puppet master server and a Puppet agent on one, all, or some of the switches in your fabric. A guide for installing the [Puppet Master](https://docs.puppet.com/puppetserver/2.4/install_from_packages.html) and one for installing the [Puppet Agent](https://docs.puppet.com/puppet/latest/reference/install_linux.html).
 
 After installing the master and agent and getting them configured install the Pluribus Puppet module from [Forge](). Once installed, you will have access to the functionality provided by this module, including all of the types listed in the type catalog. Once installed, these types can be used in your Puppet manifests to configure Pluribus Network switches.
 
 ## Usage
 
-Puppet utilized manifest file declerations to manage resources. If you have used the Netvisor CLI before, puppet essentially automates the CLI commands and allows you to quickly manage resources.
+Puppet utilized manifest file declarations to manage resources. If you have used the Netvisor CLI before, puppet essentially automates the CLI commands and allows you to quickly manage resources.
 
 For examples, creating vLANs on the cli is done with the following command: 
 ```
@@ -110,6 +110,7 @@ The following is a reference guide for using the various types provided by pn-pu
 ### Type Catalog
 
 1. [pn_cluster](#pn_cluster)
+1. [pn_command](#pn_command)
 1. [pn_lag](#pn_lag)
 1. [pn_vlag](#pn_vlag)
 1. [pn_vlan](#pn_vlan)
@@ -117,6 +118,7 @@ The following is a reference guide for using the various types provided by pn-pu
 1. [pn_vrouter_bgp](#pn_vrouter_bgp)
 1. [pn_vrouter_if](#pn_vrouter_if)
 1. [pn_vrouter_loopback](#pn_vrouter_loopback)
+1. [pn_vrouter_ospf](#pn_vrouter_ospf)
 
 ---
 ### pn_cluster
@@ -151,6 +153,39 @@ node your-pluribus-switch {
     pn_cluster { 'switch-cluster':
         ensure => present,
         nodes  => ['switch-01', 'switch-02']
+    }
+
+}
+```
+
+---
+### pn_command
+
+Executes arbitrary CLI commands when the manifest is applied to the target node. This resource type should be used with caution as its very existence is cause for some alarm. Because this has no error checking, the command given to it will be passed verbatim to the CLI. This means any errors in syntax will not be caught except by the CLI at runtime. This resource always returns `False` on its existence, meaning if it is ensured `present` it will execute the command **EVERY** time the catalog is applied, meaning there is no idempotency for this resource.
+
+The recommended alternative to using this command is to manually type the CLI commands into the CLI. This ensures that the commands are not executed too often, and allows a greater degree of control over the use of command, and you will have access to the error checking that is provided by the CLI.
+
+#### Properties
+
+**`name`** is the command that will be run on the target node.
+
+**`ensure`** specifies if the command should be applied or not when the manifest is applied.
+
+**_`switch`_** specifies the switch where the command will be executed.
+
+#### Example Implementation
+
+CLI:
+```
+CLI (...) > lldp-show
+```
+
+Puppet:
+```puppet
+node your-pluribus-switch {
+
+    pn_command { 'lldp-show':
+        ensure => present,
     }
 
 }
@@ -312,7 +347,7 @@ Manage vLANs.
 
 **_`untagged_ports`_** is a comma separated list of untagged ports that the vLAN will use. There cannot be any whitespace separating the ports, ranges are allowed. The default value is `'none'`
 
-**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
+**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By default this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 
 #### Example Implementation
 
@@ -354,13 +389,13 @@ https://forge.puppet.com/fiddyspence/sleep
 
 **`hw_vrrp_id`** is a hardware id for VRRP interfaces that may live on this vRouter.
 
-**_`service`_** simply enables or diables the vRouter. This can be set to either `enable` or `disable`. By default this is set to `enable`.
+**_`service`_** simply enables or disables the vRouter. This can be set to either `enable` or `disable`. By default this is set to `enable`.
 
 **_`bgp_as`_** is the AS number for any BGP interfaces that you will create later. Can be any integer. By default this property is set to `''` and tells Puppet not to set up BGP on the vRouter. (This can always be changed in the manifest later.)
 
 **_`router_id`_** is the IP address assigned to the vRouter, both `router_id` and `bgp_as` must be specified to create a vRouter that can host a BGP interface.
 
-**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By deafult this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
+**_`switch`_** the switch where the vRouter will live, this can be the name of any switch on the fabric. By default this value is set to `local` and creates a vRouter on whatever node is specified in the manifest.
 
 #### Example Implementation
 
@@ -391,8 +426,6 @@ Manage vRouter BGP interfaces. To create a BGP interface you must first create a
 **`ensure`** tells Puppet how to manage the BGP interface. Ensuring `present` will mean that the BGP interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the BGP interface is not present on the system after the catalog run.
 
 **`bgp_as`** is the AS ID for the BGP interface.
-
-**_`increment`_** is how much the address will be incremented by in a range.
 
 **_`switch`_** is the name of the switch where the vRouter BGP interface will be hosted. This can be any switch on the fabric. The default value is `local` which creates a BGP interface on the node where the resource was declared.
 
@@ -428,7 +461,7 @@ pn_vrouter_ip { '101':
     require => Pn_vlan['101'],
     ensure => present,
     vrouter => 'demo-vrouter',
-    ip => 'x.x.x.2',
+    ip => '101.101.101.2',
     mask => '24',
 }
 
@@ -438,28 +471,31 @@ pn_vrouter_bgp { 'demo-vrouter 101.101.101.1':
     bgp_as => '65001',
 }
 
-pn_vrouter_bgp { 'demo-vrouter 101.101.101.2-10':
+pn_vrouter_bgp { 'demo-vrouter 101.101.101.2':
     require => Pn_vrouter_ip['101'],
     ensure => present,
     bgp_as => '65001',
-    increment => '2',
 }
 ```
 
 ---
 ### pn_vrouter_if
 
-Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a VRRP interface you must specify both `vrrp_ip` and `vrrp_priority`, otherwise and IP interface will be created. When you create a VRRP interface, pn_vrouter_if creates an IP interface AND a VRRP interface in one resource deceleration. If you don't create a vRouter prior to creating a vRouter interface the interface will make one. If you create a vRouter after a vRouter interface with a diffrent name the vRouter interface will be removed. Be careful and use Before and Require statements.
+Manage vRouter IP interfaces and vRouter VRRP interfaces. If you are creating a VRRP interface you must specify both `vrrp_ip` and `vrrp_priority`, otherwise and IP interface will be created. When you create a VRRP interface, pn_vrouter_if creates an IP interface AND a VRRP interface in one resource deceleration. If you don't create a vRouter prior to creating a vRouter interface the interface will make one. If you create a vRouter after a vRouter interface with a different name the vRouter interface will be removed. Be careful and use Before and Require statements.
 
 #### Properties
 
-**`name`** is the id of the vLan that the vRouter interface will live on,followed by an IP.
+**`name`** is the name of the vrouter that the interface will live on, followed by an IP.
 
 **`ensure`** tells Puppet how to manage the vRouter interface. Ensuring `present` will mean that the vRouter interface will be created and present on the switch after a completed catalog run. Setting this to `absent` will ensure that the vRouter interface is not present on the system after the catalog run.
+
+**_`vlan`_** is the vlan that the vrouter interface will use.
 
 **_`vrrp_ip`_** is the ip of the VRRP interface. Cannot be the same as the IP of the IP interface. Must have a netmask. Default is `none`.
 
 **_`vrrp_priority`_** The VRRP interface priority, this can be a number between `0` and `255`. Default is `none`.
+
+**_`l3_port`_** is the name of an l3 port that you want the interface to be on.
 
 **_`switch`_** is the name of the switch where the IP interface will be created. This can be any switch on the fabric. The default value is `local`, which creates an IP interface on the node where the resource was declared.
 
@@ -491,10 +527,11 @@ pn_vlan { '101':
     scope       => 'fabric',
 }
 
-pn_vrouter_if { '101 101.101.101.2/24':
+pn_vrouter_if { 'demo-vrouter 101.101.101.2/24':
     require       => Pn_vlan['101'],
+    vlan          => 101,
     ensure        => present,
-    vrrp_ip       => 'x.x.x.1',
+    vrrp_ip       => '101.101.101.1',
     vrrp_priority => '110',
 }
 ```
@@ -523,6 +560,38 @@ Puppet:
 ```puppet
 pn_vrouter_loopback { 'spine1vrouter 172.16.1.1': 
     ensure => present,
+}
+```
+
+---
+### pn_vrouter_ospf
+
+Manage vrouter OSPF interfaces.
+
+#### Properties
+
+**`name`** is a netmasked ip address where the OSPF interface will be created.
+
+**`ensure`** tells Puppet how to manage the cluster. Ensuring `present` will mean that the cluster will be created and on the switch after a completed catalog run. Setting this to `absent` will ensure that the cluster is not present on the system after the catalog run.
+
+**`ospf_area`** is the OSPF area where the vrouter interface will live.
+
+**_`switch`_** is the name of the switch where the IP interface will be created. This can be any switch on the fabric. The default value is `local`, which creates an IP interface on the node where the resource was declared.
+
+#### Example Implementation
+
+CLI:
+```
+CLI (...) > vrouter-ospf-add vrouter vrouter-name network 192.168.0.9 netmask 24 ospf-area 0
+```
+
+Puppet:
+```puppet
+node your-pluribus-switch {
+  pn_vrouter_ospf { '192.168.0.9/24':
+    ensure    => present,
+    ospf_area => 0,
+  }
 }
 ```
 

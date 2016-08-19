@@ -29,7 +29,7 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
 
   def trunk_to_id(switch, trunk)
     cli(*splat_switch(switch), 'trunk-show', 'name', trunk, 'format',
-                 'trunk-id', PDQ).split('%')[0]
+        'trunk-id', PDQ).split('%')[0]
   end
 
   def self.instances
@@ -48,9 +48,11 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
     vlag_props = {}
     vlag_props[:ensure]                = :present
     vlag_props[:provider]              = :netvisor
-    vlag_props[:name]                  = vlag.split('%')[1]
-    vlag_props[:cluster]               = vlag.split('%')[2]
-    vlag_props[:mode]                  = vlag.split('%')[3] == 'active-active' \
+    vlag_props[:switch]                = vlag.split('%')[0] == `hostname`.strip \
+                                         ? 'local' : vlag.split('%')[0]
+    vlag_props[:name]                  = vlag.split('%')[2]
+    vlag_props[:cluster]               = vlag.split('%')[3]
+    vlag_props[:mode]                  = vlag.split('%')[4] == 'active-active' \
                                           ? :active : :standby
     vlag_props[:port]                  = vlag.split('%')[5]
     vlag_props[:peer_port]             = vlag.split('%')[7]
@@ -72,10 +74,11 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
   end
 
   def exists?
-    @switch1, @switch2 = cli('cluster-show', 'name', resource[:cluster],
+    switch1, switch2 = cli('cluster-show', 'name', resource[:cluster],
                              'format', 'cluster-node-1,cluster-node-2',
                              PDQ).split('%')
-    @switch2 ? @switch2.strip! : @switch2
+    @peer_switch = switch1 == switch_location ? switch2 : switch1
+    @peer_switch.strip! unless @peer_switch.nil?
     @property_hash[:ensure] == :present
   end
 
@@ -83,50 +86,32 @@ Puppet::Type.type(:pn_vlag).provide(:netvisor) do
     # switch port and peer-port positions if try 1 errors, need to replace with
     # something other than a try-catch
 
-    port = trunk_to_id(@switch1, resource[:port])
+    port = trunk_to_id(switch_location, resource[:port])
+
     if port == '' or port.nil?
-      port = trunk_to_id(@switch1, resource[:peer_port])
-      peer_port = trunk_to_id(@switch2, resource[:port])
+      port = trunk_to_id(switch_location, resource[:peer_port])
+      peer_port = trunk_to_id(@peer_switch, resource[:port])
     else
-      peer_port = trunk_to_id(@switch2, resource[:peer_port])
+      peer_port = trunk_to_id(@peer_switch, resource[:peer_port])
     end
 
-    begin
-      cli('switch', @switch1, 'vlag-create',
-          'name', resource[:name],
-          'port', port,
-          'peer-port', peer_port,
-          'mode', "active-#{resource[:mode]}",
-          'peer-switch', @switch2,
-          "failover-#{resource[:failover]}-L2",
-          'lacp-mode', resource[:lacp_mode],
-          'lacp-timeout', resource[:lacp_timeout],
-          'lacp-fallback', resource[:lacp_fallback],
-          'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
-    rescue
-      cli('switch', @switch1, 'vlag-create',
-          'name', resource[:name],
-          'port', peer_port,
-          'peer-port', port,
-          'mode', "active-#{resource[:mode]}",
-          'peer-switch', @switch2,
-          "failover-#{resource[:failover]}-L2",
-          'lacp-mode', resource[:lacp_mode],
-          'lacp-timeout', resource[:lacp_timeout],
-          'lacp-fallback', resource[:lacp_fallback],
-          'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
-    end
+    cli(*splat_switch, 'vlag-create',
+        'name', resource[:name],
+        'port', port.strip,
+        'peer-port', peer_port.strip,
+        'mode', "active-#{resource[:mode]}",
+        'peer-switch', @peer_switch,
+        "failover-#{resource[:failover]}-L2",
+        'lacp-mode', resource[:lacp_mode],
+        'lacp-timeout', resource[:lacp_timeout],
+        'lacp-fallback', resource[:lacp_fallback],
+        'lacp-fallback-timeout', resource[:lacp_fallback_timeout])
   end
 
   mk_resource_methods
 
   def destroy
-    cli('vlag-delete', 'name', resource[:name])
-  end
-
-  def cluster=(value)
-    destroy
-    create
+    cli(*splat_switch, 'vlag-delete', 'name', resource[:name])
   end
 
   def port

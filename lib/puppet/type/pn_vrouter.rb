@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 Puppet::Type.newtype(:pn_vrouter) do
 
   @doc = "Manage vRouters.
@@ -60,10 +66,10 @@ pn_vrouter { 'demo-vrouter':
     hw_vrrp_id => 18,
     service    => enable,
 }
-```
-"
+```"
 
   ensurable
+  switch
 
   newparam(:name) do
     desc "The name of the vRouter to manage."
@@ -75,22 +81,15 @@ pn_vrouter { 'demo-vrouter':
     end
   end
 
-  newproperty(:switch) do
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-            'numbers, _, ., :, and -'
-      end
-    end
-  end
-
   newproperty(:vnet) do
     desc "vNET assigned to the service."
     validate do |value|
       if value =~ /[^\w.:-]/
         raise ArgumentError, 'vNET name can only contain letters, numbers, ' +
             '_, ., :, and -'
+      end
+      unless Facter.value('avaliable_vnets').include? value
+        raise ArgumentError, "vNET #{value} was not found on the fabric"
       end
     end
   end
@@ -128,6 +127,19 @@ pn_vrouter { 'demo-vrouter':
       if value !~ /(?x)^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)
 {3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/ and value != :none
         raise ArgumentError, "Router ID must be a valid IP address"
+      end
+    end
+  end
+
+  newproperty(:bgp_redistribute) do
+    newvalues(:none, :static, :connected, :rip, :ospf)
+  end
+
+  newproperty(:bgp_max_paths) do
+    defaultto(:none)
+    validate do |value|
+      if value == /\d/ or value == :none
+        raise ArgumentError, "BGP max paths must be a number"
       end
     end
   end

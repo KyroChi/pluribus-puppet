@@ -60,13 +60,14 @@ pn_vlan { '103':
 pn_vrouter { 'test-vrouter':
   require => Pn_vlan['103'],
   ensure => present,
-  vnet => 'puppet-ansible-fab-global',
+  vnet => 'no-fail-fab-global',
   hw_vrrp_id => 18,
 }
 
 pn_vrouter_if { '103 103.103.103.2/24':
   require => Pn_vrouter['test-vrouter'],
   ensure => present,
+  vlan   => '103',
 }
 
 # PASS |pre-clean=False| Make sure it is deleted

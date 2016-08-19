@@ -12,13 +12,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require File.expand_path(
+          File.join(File.dirname(__FILE__),
+                    '..', '..', 'puppet_x', 'pn', 'type_helper.rb'))
+
+include PuppetX::Pluribus::TypeHelper
+
 require 'ipaddr'
 
 Puppet::Type.newtype(:pn_vrouter_ospf) do
 
+  @doc = "Manage vrouter OSPF interfaces.
+
+Properties
+
+name is a netmasked ip address where the OSPF interface will be created.
+
+ensure tells Puppet how to manage the cluster. Ensuring `present` will
+mean that the cluster will be created and on the switch after a completed catalog
+run. Setting this to `absent` will ensure that the cluster is not present on the
+system after the catalog run.
+
+ospf_area is the OSPF area where the vrouter interface will live.
+
+switch is the name of the switch where the IP interface will be created.
+This can be any switch on the fabric. The default value is `local`, which creates
+an IP interface on the node where the resource was declared.
+
+Example Implementation
+
+CLI:
+```
+CLI (...) > vrouter-ospf-add vrouter vrouter-name network 192.168.0.9 netmask 24
+ospf-area 0
+```
+
+Puppet:
+```puppet
+node your-pluribus-switch {
+  pn_vrouter_ospf { '192.168.0.9/24':
+    ensure    => present,
+    ospf_area => 0,
+  }
+}
+```"
+
   ensurable
+  switch()
 
   newparam(:name) do
+    desc 'A netmasked ip address'
     munge do |value|
       # *Rolls eyes* convert an ip to its netmasked ip
       vrouter, ip = value.split(' ')
@@ -29,19 +72,10 @@ Puppet::Type.newtype(:pn_vrouter_ospf) do
   end
 
   newproperty(:ospf_area) do
+    desc 'The ospf area where the ospf interface will be created.'
     validate do |value|
       if value =~ /[^\d*$]/ and value != ''
-        raise ArgumentError, 'bgp_as must be a number'
-      end
-    end
-  end
-
-  newproperty(:switch) do
-    defaultto('local')
-    validate do |value|
-      if value =~ /[^\w.:-]/
-        raise ArgumentError, 'Switch name can only contain letters, ' +
-                             'numbers, _, ., :, and -'
+        raise ArgumentError, 'ospf area must be a number'
       end
     end
   end

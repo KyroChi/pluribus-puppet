@@ -81,6 +81,11 @@ node your-pluribus-switch {
 
   newproperty(:nodes, :array_matching => :all) do
     desc 'An array of nodes that will be present in the specified cluster'
+    validate do |value|
+      unless  Facter.value('reachable_switches').include? value
+        raise ArgumentError, "Switch #{value} doesn't exist"
+      end
+    end
   end
 
   newproperty(:force_clustering) do
