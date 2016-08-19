@@ -112,7 +112,7 @@ pn_vrouter_if { '101-102 x.x.x.2/24':
   newproperty(:vlan) do
     defaultto(:none)
     validate do |value|
-      unless value =~ /^\d{1,3}$/ or value == :none
+      unless value.to_s =~ /^\d{1,3}$/ or value == :none
         raise ArgumentError, 'vLAN id must be a valid number'
       end
       unless value == :none or value.to_i.between?(2, 4092)

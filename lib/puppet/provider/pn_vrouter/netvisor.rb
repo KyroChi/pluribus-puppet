@@ -102,7 +102,7 @@ Puppet::Type.type(:pn_vrouter).provide(:netvisor) do
 
   end
 
-  def destroy)
+  def destroy
     cli(*splat_switch, 'vrouter-delete', 'name', resource[:name])
   end
 
