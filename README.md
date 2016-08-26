@@ -523,7 +523,7 @@ pn_vrouter_loopback { 'spine1vrouter 172.16.1.1':
 
 ---
 
-## The Following Modules are supported right now:
+## The Following Modules are supported with software release 2.4.1:
    - LAG
    - vLAG
    - VLAN
